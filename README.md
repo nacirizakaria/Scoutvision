@@ -162,7 +162,7 @@ Install the dependencies used by the project according to your local development
 
 ### 5. Configure environment variables
 
-Create a `.env` file using `.env.example` as a reference, if the project settings use it.
+Create a local `.env` file by copying `.env.example`. The settings module loads this file at startup.
 
 **PowerShell:**
 
@@ -170,9 +170,9 @@ Create a `.env` file using `.env.example` as a reference, if the project setting
 Copy-Item .env.example .env
 ```
 
-Review the configuration and update database settings for your local MySQL installation.
+Generate a strong Django secret key and replace the `SECRET_KEY` placeholder. Keep `DEBUG=False` unless you specifically need local debugging. Update the database settings for your local MySQL installation.
 
-Never put real passwords, API keys, or other sensitive credentials in `.env.example` or commit them to GitHub.
+Never put real passwords, API keys, or other sensitive credentials in `.env.example` or commit your `.env` file to GitHub. The application intentionally fails to start if `SECRET_KEY` is missing.
 
 ### 6. Configure MySQL
 
@@ -191,11 +191,10 @@ Update the database configuration in the application's settings or environment v
 ### 7. Apply database migrations
 
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 ```
 
-If migrations are already included in the repository, review them before generating new ones.
+The repository already includes database migrations. Use `makemigrations` only when you intentionally change Django models.
 
 ### 8. Create an administrator account
 
