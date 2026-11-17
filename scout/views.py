@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, Group
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.db.models import Count
 from django.http import HttpResponse, JsonResponse
@@ -217,83 +220,92 @@ def login_view(request):
 def register_view(request):
     """
     Admin-only user creation endpoint.
-    Redirects if user is not authenticated or not a superuser.
+    Validates passwords and restricts users to predefined roles.
     """
     if not request.user.is_authenticated or not request.user.is_superuser:
         messages.error(request, 'You do not have permission to create users.')
         return redirect('dashboard')
 
     error = None
-    success = None
 
     if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        role = request.POST.get('role', 'Scout').strip()
 
-        username = request.POST.get(
-            'username',
-            ''
-        ).strip()
-
-        password = request.POST.get(
-            'password',
-            ''
-        )
-
-        role = request.POST.get('role', '').strip()
-        if not role:
-            role = 'Scout'
-
-        # Normalize role names to exactly match the ROLE_VALUE_MAP keys
-        normalized_role = role
-        if role.lower() not in [key.lower() for key in ROLE_VALUE_MAP]:
-            normalized_role = role.title()
+        # Normalize role names using the existing role definitions.
+        role_lookup = {
+            name.lower(): name
+            for name in ROLE_VALUE_MAP
+        }
+        normalized_role = role_lookup.get(role.lower())
 
         if not username or not password:
-
             error = 'All fields are required.'
 
-        elif User.objects.filter(
-            username=username
-        ).exists():
+        elif normalized_role is None:
+            error = 'Invalid role selected.'
 
+        elif User.objects.filter(username=username).exists():
             error = 'Username already exists.'
 
         else:
+            try:
+                validate_password(password)
+            except ValidationError as validation_error:
+                error = ' '.join(validation_error.messages)
 
-            user = User.objects.create_user(
-                username=username,
-                password=password
-            )
+            if error is None:
+                user = User.objects.create_user(
+                    username=username,
+                    password=password
+                )
 
-            group, _ = Group.objects.get_or_create(
-                name=normalized_role
-            )
+                group, _ = Group.objects.get_or_create(
+                    name=normalized_role
+                )
+                user.groups.add(group)
 
-            user.groups.add(group)
+                profile_role = ROLE_VALUE_MAP[normalized_role]
+                profile, _ = Profile.objects.get_or_create(user=user)
+                profile.role = profile_role
+                profile.save()
 
-            profile_role = ROLE_VALUE_MAP.get(normalized_role, 'scout')
-            profile, _ = Profile.objects.get_or_create(user=user)
-            profile.role = profile_role
-            profile.save()
-
-            log_activity(request, 'user_create', f'Admin created user {username} with role {role}')
-            messages.success(request, f'User {username} created successfully.')
-
-            return redirect('admin_users')
+                log_activity(
+                    request,
+                    'user_create',
+                    f'Admin created user {username} with role {normalized_role}'
+                )
+                messages.success(
+                    request,
+                    f'User {username} created successfully.'
+                )
+                return redirect('admin_users')
 
     return render(
         request,
         'scout/register.html',
         {
             'error': error,
-            'success': success,
+            'success': None,
             'is_admin': True
         }
     )
 
-def logout_view(request):
 
-    username = request.user.username if request.user.is_authenticated else 'Unknown'
-    log_activity(request, 'logout', f'User {username} logged out')
+@require_POST
+def logout_view(request):
+    username = (
+        request.user.username
+        if request.user.is_authenticated
+        else 'Unknown'
+    )
+
+    log_activity(
+        request,
+        'logout',
+        f'User {username} logged out'
+    )
     logout(request)
 
     return redirect('login')
