@@ -189,7 +189,16 @@
     </div>
     <div class="nav-avatar">{{ request.user.username|first|upper }}</div>
     <div class="nav-div"></div>
-    <a href="{% url 'logout' %}" class="nav-link" style="color:rgba(255,255,255,.4);padding:7px 10px;" title="Logout"><i class="fas fa-right-from-bracket"></i></a>
+    <form method="post" action="{% url 'logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit"
+              class="nav-link"
+              style="background:none;border:none;color:rgba(255,255,255,.4);padding:7px 10px;cursor:pointer;"
+              title="Logout"
+              aria-label="Logout">
+        <i class="fas fa-right-from-bracket"></i>
+      </button>
+    </form>
   </div>
 </nav>
 
