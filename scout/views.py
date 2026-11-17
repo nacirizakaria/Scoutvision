@@ -251,7 +251,8 @@ def register_view(request):
 
         else:
             try:
-                validate_password(password)
+                candidate_user = User(username=username)
+                validate_password(password, user=candidate_user)
             except ValidationError as validation_error:
                 error = ' '.join(validation_error.messages)
 
