@@ -1,0 +1,238 @@
+{% extends 'scout/base.html' %}
+
+{% block title %}Profil utilisateur — ScoutVision Pro{% endblock %}
+
+{% block extra_styles %}
+.profile-hero {
+  background: linear-gradient(135deg,#082040 0%,#1a4f95 100%);
+  border-radius: 16px;
+  padding: 32px;
+  color: #fff;
+}
+.profile-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg,#0ea5e9,#38bdf8);
+  color: #fff;
+}
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.role-scout { background: #2563eb; color: #fff; }
+.role-analyst { background: #9333ea; color: #fff; }
+.role-head_scout { background: #ea580c; color: #fff; }
+.role-manager { background: #dc2626; color: #fff; }
+.stat-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.permission-row { display: flex; align-items: center; gap: 10px; }
+.permission-icon { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+.account-info-row { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid #e2e8f0; }
+.account-label { color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.account-value { color: #0f172a; font-weight: 700; }
+.form-input { width: 100%; margin-top: 10px; }
+.action-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.action-login { background: #dcfce7; color: #15803d; }
+.action-logout { background: #e2e8f0; color: #334155; }
+.action-shortlist_add { background: #dbeafe; color: #1d4ed8; }
+.action-user_create { background: #ffedd5; color: #c2410c; }
+.action-user_delete { background: #fee2e2; color: #b91c1c; }
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="profile-hero mb-8 relative overflow-hidden">
+    <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-center gap-4">
+        <div class="profile-avatar">{{ profile.avatar_initials }}</div>
+        <div>
+          <div class="text-2xl font-semibold">{{ target_user.username }}</div>
+          <div class="text-sm text-white/75">{{ target_user.email|default:'No email provided' }}</div>
+          <div class="text-sm text-white/70 mt-2">{{ profile.bio|default:'Aucune biographie fournie.' }}</div>
+          <div class="text-sm text-white/70 mt-2">Member since {{ target_user.date_joined|date:'d M Y' }}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="role-pill role-{{ user_role }}">{{ role_name }}</span>
+        {% if own_profile %}
+          <a href="{% url 'edit_profile' target_user.id %}" class="btn-ghost text-white border-white/30 hover:bg-white/10">Edit Profile</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-grid mb-8">
+    <div class="stat-tile">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-slate-500">Shortlist Players</div>
+          <div class="stat-value">{{ shortlist_count }}</div>
+        </div>
+        <div class="text-2xl">⭐</div>
+      </div>
+    </div>
+    <div class="stat-tile">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-slate-500">Total Actions</div>
+          <div class="stat-value">{{ total_actions }}</div>
+        </div>
+        <div class="text-2xl">📋</div>
+      </div>
+    </div>
+    <div class="stat-tile">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-slate-500">Last Active</div>
+          <div class="stat-value">{% if target_user.last_login %}{{ target_user.last_login|date:'d M Y H:i' }}{% else %}Never{% endif %}</div>
+        </div>
+        <div class="text-2xl">🕐</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[60%_40%] mb-8">
+    <div class="card p-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Permissions & Access</div>
+          <p class="text-sm text-slate-500">Role capabilities based on the current workflow.</p>
+        </div>
+      </div>
+      <div class="mt-5 space-y-4">
+        <div class="permission-row">
+          <span class="permission-icon" style="background: {{ role_permissions.can_add_shortlist|yesno:'#16a34a,#dc2626' }}"></span>
+          Add players to shortlist — <strong>{{ role_permissions.can_add_shortlist|yesno:'Oui,Non' }}</strong>
+        </div>
+        <div class="permission-row">
+          <span class="permission-icon" style="background: {{ role_permissions.can_view_players|yesno:'#16a34a,#dc2626' }}"></span>
+          Browse & search players — <strong>{{ role_permissions.can_view_players|yesno:'Oui,Non' }}</strong>
+        </div>
+        <div class="permission-row">
+          <span class="permission-icon" style="background: {{ role_permissions.can_recommend|yesno:'#16a34a,#dc2626' }}"></span>
+          Analyse & recommend players — <strong>{{ role_permissions.can_recommend|yesno:'Oui,Non' }}</strong>
+        </div>
+        <div class="permission-row">
+          <span class="permission-icon" style="background: {{ role_permissions.can_approve|yesno:'#16a34a,#dc2626' }}"></span>
+          Approve / reject players — <strong>{{ role_permissions.can_approve|yesno:'Oui,Non' }}</strong>
+        </div>
+        <div class="permission-row">
+          <span class="permission-icon" style="background: {{ role_permissions.can_admin|yesno:'#16a34a,#dc2626' }}"></span>
+          Admin panel access — <strong>{{ role_permissions.can_admin|yesno:'Oui,Non' }}</strong>
+        </div>
+      </div>
+      <div class="mt-6 text-sm leading-6 text-slate-600">
+        {% if user_role == 'scout' %}
+          Searches for players and builds scouting shortlists for analyst review.
+        {% elif user_role == 'analyst' %}
+          Analyses shortlisted players and submits recommendations to the Head Scout.
+        {% elif user_role == 'head_scout' %}
+          Reviews analyst recommendations and makes final approval decisions.
+        {% else %}
+          Full access to all platform features, users, and workflow oversight.
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card p-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Account Info</div>
+          <p class="text-sm text-slate-500">Détails de votre compte utilisateur.</p>
+        </div>
+      </div>
+      <div class="mt-5">
+        <div class="account-info-row">
+          <div>
+            <div class="account-label">Username</div>
+            <div class="account-value">{{ target_user.username }}</div>
+          </div>
+        </div>
+        <div class="account-info-row">
+          <div>
+            <div class="account-label">Role</div>
+            <div class="account-value">{{ role_name }}</div>
+          </div>
+        </div>
+        <div class="account-info-row">
+          <div>
+            <div class="account-label">Member since</div>
+            <div class="account-value">{{ target_user.date_joined|date:'d M Y' }}</div>
+          </div>
+        </div>
+        <div class="account-info-row">
+          <div>
+            <div class="account-label">Last login</div>
+            <div class="account-value">{% if target_user.last_login %}{{ target_user.last_login|date:'d M Y H:i' }}{% else %}Never{% endif %}</div>
+          </div>
+        </div>
+        {% if profile.phone %}
+          <div class="account-info-row">
+            <div>
+              <div class="account-label">Phone</div>
+              <div class="account-value">{{ profile.phone }}</div>
+            </div>
+          </div>
+        {% endif %}
+        {% if profile.assigned_scout %}
+          <div class="account-info-row">
+            <div>
+              <div class="account-label">Assigned Scout</div>
+              <div class="account-value"><a href="{% url 'user_profile' profile.assigned_scout.id %}" class="text-sky-600 hover:underline">{{ profile.assigned_scout.username }}</a></div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-6">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Recent Activity</div>
+        <p class="text-sm text-slate-500">Historique des dix dernières actions.</p>
+      </div>
+    </div>
+    <div class="mt-5">
+      {% if activity_logs %}
+        <table class="scout-table w-full">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Detail</th>
+              <th>IP Address</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in activity_logs %}
+              <tr>
+                <td><span class="action-pill action-{{ log.action }}">{{ log.action|capfirst }}</span></td>
+                <td>{{ log.detail|default:'-' }}</td>
+                <td>{{ log.ip_address|default:'-' }}</td>
+                <td>{{ log.timestamp|date:'d M Y H:i' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="text-center py-12 text-slate-500">
+          <i class="fas fa-clock-rotate-left text-3xl"></i>
+          <p class="mt-4">No activity recorded yet</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,241 @@
+{% extends 'scout/base.html' %}
+{% block title %}Dashboard — ScoutVision Pro{% endblock %}
+
+{% block extra_styles %}
+.dashboard-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:32px}
+.dashboard-greeting{font-size:20px;font-weight:800;color:#082040;line-height:1.2}
+.dashboard-subheading{font-size:13px;color:#64748b}
+.role-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:6px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:.8px}
+.role-pill.scout{background:#eff6ff;color:#0369a1}
+.role-pill.analyst{background:#f0fdf4;color:#15803d}
+.role-pill.head_scout{background:#faf5ff;color:#7e22ce}
+.role-pill.manager{background:#082040;color:#fff}
+.dashboard-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.btn-blue{background:#0ea5e9;color:#fff;border:none;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn-ghost{background:rgba(15,23,42,.04);color:#082040;border:1px solid rgba(15,23,42,.08);border-radius:10px;padding:12px 18px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn-ghost:hover{background:rgba(15,23,42,.08)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.kpi-card{position:relative;background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:24px;overflow:hidden;transition:all .25s;cursor:pointer}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;opacity:.3;transition:opacity .25s}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(8,32,64,.1)}
+.kpi-card:hover::before{opacity:1}
+.kpi-card.blue::before{background:#0ea5e9}
+.kpi-card.green::before{background:#16a34a}
+.kpi-card.purple::before{background:#7c3aed}
+.kpi-card.orange::before{background:#f97316}
+.kpi-number{font-size:42px;font-weight:800;color:#082040;line-height:1;margin-bottom:10px}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:#94a3b8;font-weight:700}
+.kpi-sparkline{width:60px;height:20px;margin-top:14px}
+.kpi-sparkline path{fill:none;stroke-width:2;opacity:.3}
+.kpi-sparkline.blue path{stroke:#0ea5e9}
+.kpi-sparkline.green path{stroke:#16a34a}
+.kpi-sparkline.purple path{stroke:#7c3aed}
+.kpi-sparkline.orange path{stroke:#f97316}
+.kpi-subtext{font-size:12px;color:#64748b;margin-top:10px}
+.quick-action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.quick-action-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;text-align:center;transition:all .2s;text-decoration:none;color:inherit;display:flex;flex-direction:column;align-items:center;gap:10px}
+.quick-action-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(8,32,64,.08)}
+.quick-action-card.blue:hover{border-color:#0ea5e9}
+.quick-action-card.navy:hover{border-color:#0f172a}
+.quick-action-card.purple:hover{border-color:#7c3aed}
+.quick-action-card.green:hover{border-color:#16a34a}
+.quick-action-icon{font-size:24px}
+.quick-action-title{font-size:13px;font-weight:700;color:#082040}
+.quick-action-desc{font-size:11px;color:#94a3b8;line-height:1.4}
+.position-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.position-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;position:relative;transition:all .2s;text-decoration:none;color:inherit;display:block}
+.position-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(8,32,64,.08)}
+.position-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:0 0 0 4px}
+.position-card.forward::before{background:#ef4444}
+.position-card.midfielder::before{background:#3b82f6}
+.position-card.defender::before{background:#16a34a}
+.position-card.goalkeeper::before{background:#7c3aed}
+.position-icon{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:18px}
+.position-icon.forward{background:rgba(239,68,68,.1);color:#ef4444}
+.position-icon.midfielder{background:rgba(59,130,246,.1);color:#3b82f6}
+.position-icon.defender{background:rgba(22,163,74,.1);color:#16a34a}
+.position-icon.goalkeeper{background:rgba(124,58,237,.1);color:#7c3aed}
+.position-title{font-size:15px;font-weight:700;color:#082040;margin-bottom:8px}
+.position-desc{font-size:12px;color:#64748b;line-height:1.5;margin-bottom:18px}
+.position-chip{position:absolute;top:20px;right:20px;background:#f8fafc;color:#475569;font-size:10px;font-weight:700;padding:5px 9px;border-radius:999px;border:1px solid #e2e8f0}
+.position-link{font-size:12px;font-weight:700;color:#0ea5e9;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.position-link:hover{text-decoration:underline}
+.recent-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden}
+.scout-table{width:100%;border-collapse:collapse}
+.scout-table th,.scout-table td{padding:16px 18px;text-align:left;border-bottom:1px solid #f1f5f9}
+.scout-table th{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;font-weight:700}
+.scout-table tr:hover td{background:#f8fbff}
+.star-row{display:flex;align-items:center;gap:2px;font-size:12px}
+.star-filled{color:#f59e0b}
+.star-empty{color:#cbd5e1}
+.notes-chip{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:#0f172a;color:#fff;font-size:11px;font-weight:700;margin-left:8px}
+.player-info{display:flex;align-items:center;gap:10px}
+.player-badge{font-size:11px;color:#64748b}
+.position-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#0f172a;font-size:11px;font-weight:700}
+.player-initials{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,#082040,#1a4f95)}
+@media(max-width:1150px){.kpi-row{grid-template-columns:repeat(2,1fr)}.position-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.dashboard-header,.dashboard-actions{flex-direction:column;align-items:flex-start}.kpi-row,.quick-action-grid,.position-grid{grid-template-columns:1fr}}
+{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-header">
+  <div>
+    <div class="dashboard-greeting">
+      Good to see you, {{ request.user.username }}
+      {% with user_role=request.user.profile.role|default:"scout" %}
+        <span class="role-pill role-{{ user_role }}">
+          {% if user_role == 'head_scout' %}Head Scout{% else %}{{ user_role|capfirst }}{% endif %}
+        </span>
+      {% endwith %}
+    </div>
+    <div class="dashboard-subheading">Your ScoutVision Pro command center is ready.</div>
+  </div>
+  <div class="dashboard-actions">
+    <a href="{% url 'players' %}" class="btn-blue"><i class="fas fa-users"></i> Browse Players</a>
+    <a href="{% url 'shortlist' %}" class="btn-ghost"><i class="fas fa-list"></i> My Shortlist</a>
+  </div>
+</div>
+
+<!-- KPI Cards Row -->
+<div class="kpi-row">
+  <div class="kpi-card blue">
+    <div class="kpi-number">{{ shortlist_count }}</div>
+    <div class="kpi-label">Shortlisted</div>
+    <svg class="kpi-sparkline blue" viewBox="0 0 60 20" aria-hidden="true"><path d="M2 16 L14 11 L26 14 L38 8 L54 10"/></svg>
+    <div class="kpi-subtext">players tracked</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-number">{{ total_players }}</div>
+    <div class="kpi-label">Database</div>
+    <svg class="kpi-sparkline green" viewBox="0 0 60 20" aria-hidden="true"><path d="M2 14 L14 10 L26 12 L38 9 L54 13"/></svg>
+    <div class="kpi-subtext">in database</div>
+  </div>
+  <div class="kpi-card purple">
+    <div class="kpi-number">{{ leagues_count }}</div>
+    <div class="kpi-label">Leagues</div>
+    <svg class="kpi-sparkline purple" viewBox="0 0 60 20" aria-hidden="true"><path d="M2 12 L14 16 L26 10 L38 14 L54 11"/></svg>
+    <div class="kpi-subtext">available</div>
+  </div>
+  <div class="kpi-card orange">
+    <div class="kpi-number">{{ positions_count }}</div>
+    <div class="kpi-label">Positions</div>
+    <svg class="kpi-sparkline orange" viewBox="0 0 60 20" aria-hidden="true"><path d="M2 15 L14 12 L26 15 L38 11 L54 14"/></svg>
+    <div class="kpi-subtext">covered</div>
+  </div>
+</div>
+
+<!-- Quick Actions Grid -->
+<div class="quick-action-grid">
+  <a href="{% url 'players' %}" class="quick-action-card blue">
+    <div class="quick-action-icon"><i class="fas fa-users"></i></div>
+    <div class="quick-action-title">Browse Players</div>
+    <div class="quick-action-desc">Explore the player database</div>
+  </a>
+  <a href="{% url 'compare' %}" class="quick-action-card navy">
+    <div class="quick-action-icon"><i class="fas fa-chart-bar"></i></div>
+    <div class="quick-action-title">Compare</div>
+    <div class="quick-action-desc">Side-by-side analysis</div>
+  </a>
+  <a href="{% url 'recommend' %}" class="quick-action-card purple">
+    <div class="quick-action-icon"><i class="fas fa-lightbulb"></i></div>
+    <div class="quick-action-title">Recommend</div>
+    <div class="quick-action-desc">AI-powered suggestions</div>
+  </a>
+  <a href="{% url 'export_shortlist' %}?format=csv" class="quick-action-card green">
+    <div class="quick-action-icon"><i class="fas fa-file-download"></i></div>
+    <div class="quick-action-title">Export CSV</div>
+    <div class="quick-action-desc">Download your picks</div>
+  </a>
+</div>
+
+<!-- Position Breakdown -->
+<div class="position-grid">
+  {% for pos, icon, desc in positions_list %}
+  <a href="{% url 'players' %}?position={{ pos }}" class="position-card {% if pos == 'Forward' %}forward{% elif pos == 'Midfielder' %}midfielder{% elif pos == 'Defender' %}defender{% else %}goalkeeper{% endif %}">
+    <div class="position-chip">25+</div>
+    <div class="position-icon {% if pos == 'Forward' %}forward{% elif pos == 'Midfielder' %}midfielder{% elif pos == 'Defender' %}defender{% else %}goalkeeper{% endif %}">{{ icon }}</div>
+    <div class="position-title">{{ pos }}</div>
+    <div class="position-desc">{{ desc }}</div>
+    <div class="position-link">Browse <i class="fas fa-arrow-right"></i></div>
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Recent Shortlist Section -->
+<div class="card">
+  <div class="card-header">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <i class="fas fa-star" style="color:#0ea5e9;"></i>
+      <div class="card-title">Recent Shortlist</div>
+    </div>
+    {% if recent_shortlist %}
+      <a href="{% url 'shortlist' %}" class="btn-ghost" style="font-size:12px;padding:6px 12px;">View All</a>
+    {% endif %}
+  </div>
+  {% if recent_shortlist %}
+  <div class="recent-table-wrap">
+    <table class="scout-table">
+      <thead>
+        <tr><th>Player</th><th>Position</th><th>Club</th><th>Added</th><th>Rating</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for p in recent_shortlist %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="player-initials">{{ p.player_name|first|upper }}</div>
+              <div>
+                <div style="font-weight:600;color:#082040;font-size:13px;display:flex;align-items:center;gap:8px;">
+                {{ p.player_name }}
+                {% if p.note_count %}
+                <span class="notes-chip">{{ p.note_count }}</span>
+                {% endif %}
+              </div>
+                <div style="font-size:11px;color:#94a3b8;">#{{ p.player_id }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if p.position == 'F' or p.position == 'Forward' %}
+              <span class="position-pill">Forward</span>
+            {% elif p.position == 'M' or p.position == 'Midfielder' %}
+              <span class="position-pill">Midfielder</span>
+            {% elif p.position == 'D' or p.position == 'Defender' %}
+              <span class="position-pill">Defender</span>
+            {% elif p.position == 'G' or p.position == 'Goalkeeper' %}
+              <span class="position-pill">Goalkeeper</span>
+            {% else %}
+              <span class="position-pill">{{ p.position|default:"—" }}</span>
+            {% endif %}
+          </td>
+          <td style="color:#64748b;font-size:13px;">{{ p.team|default:"—" }}</td>
+          <td style="font-size:12px;color:#94a3b8;">{{ p.added_at|date:"M d" }}</td>
+          <td>
+            {% if p.rating %}
+            <div class="star-row">
+              {% for _ in "12345"|make_list %}
+              <i class="fas fa-star {% if forloop.counter <= p.rating %}star-filled{% else %}star-empty{% endif %}"></i>
+              {% endfor %}
+            </div>
+            {% else %}
+            <span style="color:#94a3b8;">—</span>
+            {% endif %}
+          </td>
+          <td><a href="{% url 'player_profile' p.player_id %}" class="btn-ghost" style="font-size:11px;padding:5px 12px;"><i class="fas fa-arrow-right"></i></a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px 20px;">
+    <i class="fas fa-star" style="font-size:32px;color:#e2e8f0;display:block;margin-bottom:12px;"></i>
+    <div style="font-size:15px;font-weight:600;color:#082040;margin-bottom:6px;">Your shortlist is empty</div>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:20px;">Browse players and add them to track here.</div>
+    <a href="{% url 'players' %}" class="btn-blue"><i class="fas fa-users"></i> Browse Players</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

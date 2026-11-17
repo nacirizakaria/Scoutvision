@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ScoutVision Pro — Login</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+
+  <style>
+
+    *,
+    *::before,
+    *::after{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    body{
+      font-family:'Plus Jakarta Sans',sans-serif;
+      min-height:100vh;
+      display:flex;
+      background:#f1f5f9;
+    }
+
+    /* =========================================
+       LEFT PANEL
+    ========================================= */
+
+    .left{
+      flex:1;
+      background:#082040;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:60px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .left-bg-circle{
+      position:absolute;
+      border-radius:50%;
+      background:rgba(56,189,248,.06);
+      pointer-events:none;
+    }
+
+    .pitch-svg{
+      position:absolute;
+      inset:0;
+      opacity:.05;
+      pointer-events:none;
+      stroke:#fff;
+    }
+
+    .stat-pills{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      margin:40px 0 0;
+      position:relative;
+      z-index:2;
+      flex-wrap:wrap;
+    }
+
+    .stat-pill{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:20px;
+      padding:8px 16px;
+      font-size:11px;
+      font-weight:600;
+      color:#fff;
+      backdrop-filter:blur(10px);
+    }
+
+    .quote-block{
+      position:absolute;
+      bottom:40px;
+      left:60px;
+      right:60px;
+      font-size:12px;
+      font-style:italic;
+      color:rgba(255,255,255,.35);
+      line-height:1.6;
+      max-width:280px;
+    }
+
+    .hero-logo{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:48px;
+      position:relative;
+      z-index:2;
+    }
+
+    .hero-icon{
+      width:52px;
+      height:52px;
+      background:linear-gradient(135deg,#38bdf8,#0ea5e9);
+      border-radius:14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:26px;
+    }
+
+    .hero-title{
+      font-size:64px;
+      font-weight:800;
+      color:#fff;
+      line-height:.95;
+      letter-spacing:-2px;
+      position:relative;
+      z-index:2;
+    }
+
+    .hero-title span{
+      color:#38bdf8;
+      display:block;
+    }
+
+    .hero-sub{
+      font-size:13px;
+      color:rgba(255,255,255,.45);
+      letter-spacing:3px;
+      text-transform:uppercase;
+      font-weight:500;
+      margin-top:14px;
+      position:relative;
+      z-index:2;
+    }
+
+    .hero-divider{
+      width:48px;
+      height:2px;
+      background:#0ea5e9;
+      margin:20px 0;
+      border-radius:1px;
+      position:relative;
+      z-index:2;
+    }
+
+    .feature-list{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      position:relative;
+      z-index:2;
+    }
+
+    .feature-item{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-size:13px;
+      color:rgba(255,255,255,.6);
+    }
+
+    .feature-dot{
+      width:28px;
+      height:28px;
+      border-radius:8px;
+      background:rgba(56,189,248,.15);
+      border:1px solid rgba(56,189,248,.25);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      color:#38bdf8;
+      flex-shrink:0;
+    }
+
+    .float-cards{
+      position:absolute;
+      right:40px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      z-index:2;
+    }
+
+    .float-card{
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:12px;
+      padding:12px 16px;
+      backdrop-filter:blur(10px);
+    }
+
+    .float-card-val{
+      font-size:22px;
+      font-weight:800;
+      color:#fff;
+      line-height:1;
+    }
+
+    .float-card-lbl{
+      font-size:10px;
+      color:rgba(255,255,255,.45);
+      text-transform:uppercase;
+      letter-spacing:1.5px;
+      font-weight:600;
+      margin-top:3px;
+    }
+
+    /* =========================================
+       RIGHT PANEL
+    ========================================= */
+
+    .right{
+      width:440px;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:56px 48px;
+      position:relative;
+    }
+
+    .right::after{
+      content:'';
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      height:3px;
+      background:linear-gradient(90deg,#0ea5e9,#082040);
+      border-radius:0;
+    }
+
+    .right::before{
+      content:'';
+      position:absolute;
+      top:0;
+      left:0;
+      bottom:0;
+      width:1px;
+      background:linear-gradient(
+        180deg,
+        transparent,
+        #e2e8f0 20%,
+        #e2e8f0 80%,
+        transparent
+      );
+    }
+
+    .form-logo{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:40px;
+    }
+
+    .form-logo-icon{
+      width:40px;
+      height:40px;
+      background:linear-gradient(135deg,#38bdf8,#0ea5e9);
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+    }
+
+    .form-logo-text{
+      font-weight:800;
+      font-size:18px;
+      color:#082040;
+    }
+
+    .form-logo-sub{
+      font-size:9px;
+      color:#0ea5e9;
+      letter-spacing:2.5px;
+      text-transform:uppercase;
+      font-weight:600;
+    }
+
+    .form-heading{
+      font-size:26px;
+      font-weight:800;
+      color:#082040;
+      letter-spacing:-.5px;
+      width:100%;
+      margin-bottom:4px;
+    }
+
+    .form-sub{
+      font-size:13px;
+      color:#94a3b8;
+      margin-bottom:32px;
+      width:100%;
+    }
+
+    .form-group{
+      width:100%;
+      margin-bottom:18px;
+    }
+
+    label{
+      display:block;
+      font-size:11px;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.8px;
+      color:#64748b;
+      margin-bottom:7px;
+    }
+
+    .input-wrap{
+      position:relative;
+    }
+
+    .input-icon{
+      position:absolute;
+      left:13px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#cbd5e1;
+      font-size:13px;
+      pointer-events:none;
+    }
+
+    .password-toggle{
+      position:absolute;
+      right:13px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#cbd5e1;
+      font-size:13px;
+      cursor:pointer;
+      transition:color .15s;
+      user-select:none;
+    }
+
+    .password-toggle:hover{
+      color:#0ea5e9;
+    }
+
+    input[type="text"],
+    input[type="password"]{
+      width:100%;
+      background:#f8fafc;
+      border:1.5px solid #e2e8f0;
+      border-radius:10px;
+      padding:12px 14px 12px 40px;
+      color:#1e293b;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:14px;
+      outline:none;
+      transition:all .15s;
+    }
+
+    input[type="password"].has-toggle{
+      padding-right:40px;
+    }
+
+    input:focus{
+      border-color:#0ea5e9;
+      background:#fff;
+      box-shadow:0 0 0 3px rgba(14,165,233,.1);
+    }
+
+    input::placeholder{
+      color:#cbd5e1;
+    }
+
+    .btn-login{
+      width:100%;
+      background:#082040;
+      color:#fff;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-weight:700;
+      font-size:14px;
+      letter-spacing:.3px;
+      padding:13px;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      margin-top:8px;
+      transition:all .2s;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .btn-login:hover{
+      background:#103a6e;
+      transform:translateY(-1px);
+      box-shadow:0 6px 20px rgba(8,32,64,.25);
+    }
+
+    .btn-login i:last-child{
+      transition:transform .2s ease;
+      transform:translateX(0);
+    }
+
+    .btn-login:hover i:last-child{
+      transform:translateX(3px);
+    }
+
+    .divider-with-text{
+      width:100%;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin:20px 0;
+    }
+
+    .divider-with-text::before,
+    .divider-with-text::after{
+      content:'';
+      flex:1;
+      height:1px;
+      background:#e2e8f0;
+    }
+
+    .divider-with-text span{
+      font-size:11px;
+      color:#94a3b8;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.5px;
+      white-space:nowrap;
+    }
+
+    .demo-hint{
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:12px;
+      font-size:12px;
+      color:#64748b;
+      line-height:1.5;
+      width:100%;
+    }
+
+    .error-msg{
+      background:#fef2f2;
+      border:1px solid #fecaca;
+      color:#dc2626;
+      padding:12px 14px;
+      border-radius:10px;
+      font-size:13px;
+      margin-bottom:20px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      width:100%;
+    }
+
+    .register-link{
+      margin-top:22px;
+      text-align:center;
+      font-size:13px;
+      color:#94a3b8;
+      width:100%;
+    }
+
+    .register-link a{
+      color:#0ea5e9;
+      text-decoration:none;
+      font-weight:700;
+    }
+
+    .form-footer{
+      margin-top:28px;
+      text-align:center;
+      font-size:11px;
+      color:#cbd5e1;
+      width:100%;
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .btn-login i:last-child {
+      animation: slideInRight 0.3s ease forwards;
+    }
+
+    @media(max-width:860px){
+
+      .left{
+        display:none;
+      }
+
+      .right{
+        width:100%;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+<!-- =========================================
+     LEFT PANEL
+========================================= -->
+
+<div class="left">
+
+  <div
+    class="left-bg-circle"
+    style="width:500px;height:500px;top:-120px;left:-120px;"
+  ></div>
+
+  <div
+    class="left-bg-circle"
+    style="width:300px;height:300px;bottom:-80px;right:-80px;"
+  ></div>
+
+  <!-- Pitch -->
+
+  <svg
+    class="pitch-svg"
+    viewBox="0 0 700 500"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="1.5"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+
+    <rect x="40" y="40" width="620" height="420" rx="2"/>
+
+    <line x1="350" y1="40" x2="350" y2="460"/>
+
+    <circle cx="350" cy="250" r="70"/>
+
+    <circle cx="350" cy="250" r="3" fill="#ffffff"/>
+
+    <rect x="40" y="160" width="110" height="180"/>
+
+    <rect x="40" y="200" width="45" height="100"/>
+
+    <rect x="550" y="160" width="110" height="180"/>
+
+    <rect x="615" y="200" width="45" height="100"/>
+
+  </svg>
+
+  <!-- Float Cards -->
+
+  <div class="float-cards">
+
+    <div class="float-card">
+      <div class="float-card-val">100+</div>
+      <div class="float-card-lbl">Players</div>
+    </div>
+
+    <div class="float-card">
+      <div class="float-card-val">5</div>
+      <div class="float-card-lbl">Leagues</div>
+    </div>
+
+    <div class="float-card">
+      <div class="float-card-val">24/7</div>
+      <div class="float-card-lbl">Scouting</div>
+    </div>
+
+  </div>
+
+  <div style="position:relative;z-index:2;max-width:420px;">
+
+    <div class="hero-logo">
+
+      <div class="hero-icon">
+        ⚽
+      </div>
+
+      <div>
+
+        <div style="
+        font-size:13px;
+        font-weight:700;
+        color:#fff;
+        letter-spacing:.5px;
+        ">
+          SCOUTVISION
+        </div>
+
+        <div style="
+        font-size:9px;
+        color:#38bdf8;
+        letter-spacing:3px;
+        text-transform:uppercase;
+        font-weight:600;
+        ">
+          Pro Platform
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="hero-title">
+      Scout<span>Smarter.</span>
+    </div>
+
+    <div class="hero-sub">
+      Intelligence for the Beautiful Game
+    </div>
+
+    <div class="hero-divider"></div>
+
+    <div class="feature-list">
+
+      <div class="feature-item">
+        <div class="feature-dot">
+          <i class="fas fa-bolt"></i>
+        </div>
+
+        Local player scouting database
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-dot">
+          <i class="fas fa-chart-radar"></i>
+        </div>
+
+        Advanced attribute analysis & radar charts
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-dot">
+          <i class="fas fa-star"></i>
+        </div>
+
+        Smart shortlisting with CSV export
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-dot">
+          <i class="fas fa-code-compare"></i>
+        </div>
+
+        Side-by-side player comparison
+      </div>
+
+    </div>
+
+    <!-- STAT PILLS -->
+    <div class="stat-pills">
+      <div class="stat-pill">
+        <i class="fas fa-users" style="margin-right:6px;"></i>100+ Players
+      </div>
+      <div class="stat-pill">
+        <i class="fas fa-globe" style="margin-right:6px;"></i>5 Leagues
+      </div>
+      <div class="stat-pill">
+        <i class="fas fa-map-pin" style="margin-right:6px;"></i>4 Positions
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUOTE BLOCK -->
+  <div class="quote-block">
+    "The best scouts don't just watch — they analyse."
+  </div>
+
+</div>
+
+<!-- =========================================
+     RIGHT PANEL
+========================================= -->
+
+<div class="right">
+
+  <div class="form-logo">
+
+    <div class="form-logo-icon">
+      ⚽
+    </div>
+
+    <div>
+
+      <div class="form-logo-text">
+        ScoutVision
+      </div>
+
+      <div class="form-logo-sub">
+        Pro Platform
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="form-heading">
+    Welcome back
+  </div>
+
+  <div class="form-sub">
+    Sign in to your scouting dashboard
+  </div>
+
+  {% if form.errors %}
+  <div class="error-msg">
+    <i class="fas fa-circle-exclamation"></i>
+    Invalid credentials. Please try again.
+  </div>
+  {% endif %}
+
+  <form method="post" style="width:100%">
+
+    {% csrf_token %}
+
+    <div class="form-group">
+
+      <label>
+        Username
+      </label>
+
+      <div class="input-wrap">
+
+        <i class="fas fa-user input-icon"></i>
+
+        <input
+          type="text"
+          name="username"
+          placeholder="Enter your username"
+          autocomplete="username"
+          required
+        >
+
+      </div>
+
+    </div>
+
+    <div class="form-group">
+
+      <label>
+        Password
+      </label>
+
+      <div class="input-wrap">
+
+        <i class="fas fa-lock input-icon"></i>
+
+        <input
+          id="password-input"
+          type="password"
+          name="password"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          required
+          class="has-toggle"
+        >
+
+        <i class="fas fa-eye password-toggle" onclick="togglePassword()" id="password-toggle-icon"></i>
+
+      </div>
+
+    </div>
+
+    <button type="submit" class="btn-login">
+
+      <span>Sign In</span>
+
+      <i class="fas fa-arrow-right"></i>
+
+    </button>
+
+  </form>
+
+
+  <div class="form-footer">
+    ScoutVision Pro &copy; 2025 — All rights reserved
+  </div>
+
+</div>
+
+<script>
+function togglePassword() {
+  const input = document.getElementById('password-input');
+  const icon = document.getElementById('password-toggle-icon');
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  }
+}
+</script>
+
+</body>
+</html>

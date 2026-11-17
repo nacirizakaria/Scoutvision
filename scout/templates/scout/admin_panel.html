@@ -1,0 +1,247 @@
+{% extends 'scout/base.html' %}
+{% block title %}Admin Panel — ScoutVision Pro{% endblock %}
+
+{% block extra_styles %}
+.admin-section-title{font-size:18px;font-weight:800;color:#082040;letter-spacing:-.2px;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.admin-badge{background:#0ea5e9;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.kpi-tile{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;text-align:center;transition:all .2s}
+.kpi-tile:hover{box-shadow:0 4px 16px rgba(8,32,64,.08);border-color:#cbd5e1;transform:translateY(-1px)}
+.kpi-val{font-size:28px;font-weight:800;color:#082040;line-height:1;letter-spacing:-.5px}
+.kpi-lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:8px}
+.action-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
+.action-login{background:#dcfce7;color:#15803d}
+.action-logout{background:#f3f4f6;color:#6b7280}
+.action-register{background:#dbeafe;color:#1e40af}
+.action-shortlist_add{background:#e0f2fe;color:#0c4a6e}
+.action-shortlist_remove{background:#fed7aa;color:#92400e}
+.action-export_csv{background:#e9d5ff;color:#6b21a8}
+.action-user_toggle{background:#fda4af;color:#831843}
+.action-user_delete{background:#fecaca;color:#dc2626}
+.action-logs_clear{background:#bfdbfe;color:#1e3a8a}
+.filter-bar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.status-active{background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px}
+.status-inactive{background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px}
+.admin-badge-gold{background:#fbbf24;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px}
+.user-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#082040,#1a4f95);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.pagination-wrap{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9}
+.pagination-btn{background:#fff;border:1px solid #e2e8f0;padding:7px 12px;border-radius:7px;font-size:12px;font-weight:600;color:#334155;cursor:pointer;transition:all .15s;text-decoration:none}
+.pagination-btn:hover{background:#f8fafc;border-color:#cbd5e1;color:#082040}
+.pagination-btn.disabled{opacity:.5;cursor:not-allowed}
+.pagination-info{font-size:12px;color:#94a3b8;margin:0 10px}
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-size:22px;font-weight:800;color:#082040;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;">
+      🛡️ Admin Panel
+      <span style="background:#fca5a5;width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+    </div>
+    <div style="font-size:13px;color:#64748b;margin-top:3px;">System administration and activity monitoring</div>
+  </div>
+  <a href="{% url 'dashboard' %}" class="btn-ghost"><i class="fas fa-home"></i> Back to Dashboard</a>
+</div>
+
+<!-- ===== USER MANAGEMENT ===== -->
+<div style="margin-bottom:40px;">
+  <div class="admin-section-title">
+    👥 User Management
+    <span class="admin-badge">{{ total_users }}</span>
+  </div>
+
+  <!-- KPI Tiles -->
+  <div class="kpi-grid">
+    <div class="kpi-tile">
+      <div class="kpi-val" style="color:#082040;">{{ total_users }}</div>
+      <div class="kpi-lbl">Total Users</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-val" style="color:#16a34a;">{{ active_users }}</div>
+      <div class="kpi-lbl">Active</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-val" style="color:#dc2626;">{{ inactive_users }}</div>
+      <div class="kpi-lbl">Inactive</div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-val" style="color:#fbbf24;">{{ superusers }}</div>
+      <div class="kpi-lbl">Admins</div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card">
+    <table class="scout-table" style="width:100%;">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Date Joined</th>
+          <th>Last Login</th>
+          <th>Status</th>
+          <th>Admin</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users_list %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="user-avatar">{{ user.username|first|upper }}</div>
+              <span style="font-weight:600;color:#082040;">{{ user.username }}</span>
+            </div>
+          </td>
+          <td style="color:#64748b;font-size:12px;">{{ user.email|default:"—" }}</td>
+          <td>
+            {% if user.profile %}
+              <span style="font-size:12px;font-weight:600;color:#082040;">{{ user.profile.get_role_display }}</span>
+            {% else %}
+              <span style="font-size:12px;color:#e2e8f0;">No profile</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:#94a3b8;">{{ user.date_joined|date:"M d, Y" }}</td>
+          <td style="font-size:12px;color:#94a3b8;">
+            {% if user.last_login %}
+              {{ user.last_login|date:"M d, Y" }}
+            {% else %}
+              <span style="color:#cbd5e1;">Never</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if user.is_active %}
+              <span class="status-active">✓ Active</span>
+            {% else %}
+              <span class="status-inactive">✗ Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if user.is_superuser %}
+              <span class="admin-badge-gold">Admin</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              {% if user != request.user %}
+              <form method="post" action="{% url 'toggle_user_active' user.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-ghost" style="font-size:11px;padding:5px 10px;">
+                  {% if user.is_active %}<i class="fas fa-ban"></i> Deactivate{% else %}<i class="fas fa-check"></i> Activate{% endif %}
+                </button>
+              </form>
+              <form method="post" action="{% url 'delete_user_admin' user.id %}" style="display:inline;" onsubmit="return confirm('Permanently delete {{ user.username }}? This cannot be undone.');">
+                {% csrf_token %}
+                <button type="submit" class="btn-danger" style="font-size:11px;padding:5px 10px;"><i class="fas fa-trash"></i></button>
+              </form>
+              {% else %}
+              <span style="font-size:11px;color:#cbd5e1;">Current user</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== ACTIVITY LOG ===== -->
+<div>
+  <div class="admin-section-title">
+    📋 Activity Log
+    <span class="admin-badge">{{ logs|length }}</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <form method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;">
+      <select name="action_filter" class="form-input" style="width:auto;padding:8px 12px;">
+        <option value="">All Actions</option>
+        {% for action in action_types %}
+          <option value="{{ action }}" {% if action_filter == action %}selected{% endif %}>{{ action }}</option>
+        {% endfor %}
+      </select>
+
+      <label style="font-size:12px;color:#64748b;">From:</label>
+      <input type="date" name="date_from" value="{{ date_from }}" class="form-input" style="width:150px;padding:8px 12px;">
+
+      <label style="font-size:12px;color:#64748b;">To:</label>
+      <input type="date" name="date_to" value="{{ date_to }}" class="form-input" style="width:150px;padding:8px 12px;">
+
+      <button type="submit" class="btn-primary" style="padding:8px 16px;font-size:12px;"><i class="fas fa-filter"></i> Filter</button>
+
+      <div style="flex:1;"></div>
+
+      <form method="post" action="{% url 'clear_logs' %}" style="display:inline;" onsubmit="return confirm('Clear ALL activity logs? This cannot be undone.');">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger" style="padding:8px 14px;font-size:12px;"><i class="fas fa-trash"></i> Clear All</button>
+      </form>
+    </form>
+  </div>
+
+  <!-- Logs Table -->
+  <div class="card">
+    {% if logs %}
+    <table class="scout-table" style="width:100%;">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Detail</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="font-size:12px;color:#94a3b8;">
+            {{ log.timestamp|date:"M d, Y H:i" }}
+          </td>
+          <td style="font-size:12px;font-weight:600;color:#082040;">
+            {{ log.user.username|default:"—" }}
+          </td>
+          <td>
+            <span class="action-badge action-{{ log.action }}">{{ log.action }}</span>
+          </td>
+          <td style="font-size:12px;color:#64748b;">{{ log.detail|truncatechars:60|default:"—" }}</td>
+          <td style="font-size:12px;color:#94a3b8;">{{ log.ip_address|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination-wrap">
+      {% if has_prev %}
+        <a href="?action_filter={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page=1" class="pagination-btn"><i class="fas fa-chevron-left"></i></a>
+        <a href="?action_filter={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ current_page|add:'-1' }}" class="pagination-btn"><i class="fas fa-chevron-left"></i></a>
+      {% else %}
+        <button class="pagination-btn disabled" disabled><i class="fas fa-chevron-left"></i></button>
+        <button class="pagination-btn disabled" disabled><i class="fas fa-chevron-left"></i></button>
+      {% endif %}
+
+      <span class="pagination-info">Page {{ current_page }} of {{ total_pages }}</span>
+
+      {% if has_next %}
+        <a href="?action_filter={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ current_page|add:'1' }}" class="pagination-btn"><i class="fas fa-chevron-right"></i></a>
+        <a href="?action_filter={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ total_pages }}" class="pagination-btn"><i class="fas fa-chevron-right"></i></a>
+      {% else %}
+        <button class="pagination-btn disabled" disabled><i class="fas fa-chevron-right"></i></button>
+        <button class="pagination-btn disabled" disabled><i class="fas fa-chevron-right"></i></button>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
+      <i class="fas fa-file-contract" style="font-size:32px;color:#e2e8f0;display:block;margin-bottom:12px;"></i>
+      <div style="font-size:14px;font-weight:600;color:#082040;">No activity logs</div>
+      <div style="font-size:12px;margin-top:4px;">Logs will appear here as users interact with the platform</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

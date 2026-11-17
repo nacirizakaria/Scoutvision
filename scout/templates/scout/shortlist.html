@@ -1,0 +1,250 @@
+{% extends 'scout/base.html' %}
+{% block title %}Shortlist — ScoutVision Pro{% endblock %}
+
+{% block extra_styles %}
+.shortlist-table tbody tr{cursor:grab;transition:all .15s}
+.shortlist-table tbody tr:hover{background:#f0f9ff;box-shadow:0 2px 8px rgba(14,165,233,.1)}
+.shortlist-table tbody tr.dragging{opacity:.5;background:#eff6ff}
+.shortlist-table tbody tr.drag-over td{border-top:2px dashed #0ea5e9}
+.priority-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;border:1px solid;transition:all .15s}
+.priority-low{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.priority-med{background:#fef3c7;color:#d97706;border-color:#fde68a}
+.priority-high{background:#dcfce7;color:#15803d;border-color:#bbf7d0}
+.priority-none{background:#f1f5f9;color:#94a3b8;border-color:#cbd5e1;cursor:pointer}
+.export-btn-large{background:#0ea5e9;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;padding:12px 28px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:10px;text-decoration:none}
+.export-btn-large:hover{background:#0284c7;transform:translateY(-2px);box-shadow:0 6px 20px rgba(14,165,233,.3)}
+.player-initials{width:36px;height:36px;border-radius:999px;background:linear-gradient(135deg,#082040,#1a4f95);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.position-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;}
+.priority-select{min-width:110px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#475569;font-weight:600;outline:none}
+.priority-select-low{color:#15803d}
+.priority-select-medium{color:#b45309}
+.priority-select-high{color:#b91c1c}
+.muted-link{color:#64748b;text-decoration:underline dotted;cursor:not-allowed}
+.scout-badge{display:inline-flex;align-items:center;gap:6px;background:#f0f4ff;color:#1d4ed8;padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600}
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-size:22px;font-weight:800;color:#082040;letter-spacing:-.3px;">{% if is_manager_or_head_scout %}All Shortlists{% else %}My Shortlist{% endif %}</div>
+    <div style="margin-top:8px;display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="background:#0f172a;color:#fff;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;">{{ shortlist_count }} player{{ shortlist_count|pluralize }}</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    {% if not is_manager_or_head_scout %}
+    <a href="{% url 'export_shortlist' %}?format=csv" class="btn-ghost"><i class="fas fa-file-csv"></i> Export CSV</a>
+    {% endif %}
+    <a href="{% url 'players' %}" class="btn-blue"><i class="fas fa-plus"></i> Add Players</a>
+  </div>
+</div>
+
+{% if players %}
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+  <span style="background:#eef2ff;color:#1d4ed8;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;">Forwards: {{ position_counts.Forward }}</span>
+  <span style="background:#ecfccb;color:#4d7c0f;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;">Midfielders: {{ position_counts.Midfielder }}</span>
+  <span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;">Defenders: {{ position_counts.Defender }}</span>
+  <span style="background:#cffafe;color:#0c4a6e;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;">Goalkeepers: {{ position_counts.Goalkeeper }}</span>
+</div>
+
+<div class="card" style="overflow-x:auto;margin-bottom:16px;">
+  <table class="scout-table shortlist-table" id="shortlistTable">
+    <thead>
+      <tr>
+        <th style="width:40px;">#</th>
+        <th>Player</th>
+        {% if is_manager_or_head_scout %}<th>Scout</th>{% endif %}
+        <th>Position</th>
+        <th>Club</th>
+        <th>Added</th>
+        <th>Notes Preview</th>
+        <th>Priority</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in players %}
+      <tr draggable="true" data-id="{{ p.player_id }}">
+        <td style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:12px;">
+          <i class="fas fa-grip-vertical" style="color:#cbd5e1;font-size:16px;"></i>
+          <span>{{ forloop.counter }}</span>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="player-initials">{{ p.player_name|first|upper }}</div>
+            <div>
+              <div style="font-weight:700;color:#082040;font-size:14px;">{{ p.player_name }}</div>
+              <div style="font-size:12px;color:#94a3b8;">#{{ p.player_id }}</div>
+            </div>
+          </div>
+        </td>
+        {% if is_manager_or_head_scout %}
+        <td>
+          <span class="scout-badge">
+            <i class="fas fa-user-circle"></i>
+            {{ p.scout.username }}
+          </span>
+        </td>
+        {% endif %}
+        <td>
+          {% if p.position == 'Forward' %}
+            <span class="position-badge pos-fw">{{ p.position }}</span>
+          {% elif p.position == 'Midfielder' %}
+            <span class="position-badge pos-mf">{{ p.position }}</span>
+          {% elif p.position == 'Defender' %}
+            <span class="position-badge pos-df">{{ p.position }}</span>
+          {% elif p.position == 'Goalkeeper' %}
+            <span class="position-badge pos-gk">{{ p.position }}</span>
+          {% else %}
+            <span class="position-badge pos-gk">{{ p.position|default:"—" }}</span>
+          {% endif %}
+        </td>
+        <td style="color:#64748b;font-size:13px;">{{ p.team|default:"—" }}</td>
+        <td style="font-size:12px;color:#94a3b8;">{{ p.added_at|date:"M d, Y" }}</td>
+        <td style="font-size:13px;color:#475569;">{% if p.notes %}{{ p.notes|truncatechars:35 }}{% else %}<span style="color:#94a3b8;">— no notes —</span>{% endif %}</td>
+        <td>
+          <select class="priority-select priority-select-medium" data-player-id="{{ p.player_id }}" {% if is_manager_or_head_scout %}disabled{% endif %}>
+            <option value="Low" style="color:#15803d;">Low</option>
+            <option value="Medium" style="color:#b45309;" selected>Medium</option>
+            <option value="High" style="color:#b91c1c;">High</option>
+          </select>
+        </td>
+        <td>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="{% url 'player_profile' p.player_id %}" class="btn-ghost" style="font-size:12px;padding:8px 12px;"><i class="fas fa-user"></i> View</a>
+            {% if is_analyst %}
+              <a href="{% url 'analyst_review' p.id %}" class="btn-blue" style="font-size:12px;padding:8px 12px;"><i class="fas fa-file-alt"></i> Review</a>
+            {% endif %}
+            <form method="post" action="{% url 'remove_shortlist' %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="shortlist_id" value="{{ p.id }}">
+              <button type="submit" class="btn-danger" style="font-size:12px;padding:8px 12px;" onclick="return confirm('Remove {{ p.player_name }}?')"><i class="fas fa-trash"></i> Remove</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if shortlist_count >= 2 and not is_manager_or_head_scout %}
+<div class="card" style="border-left:4px solid #0f172a;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:260px;">
+    <i class="fas fa-code-compare" style="color:#0ea5e9;font-size:24px;"></i>
+    <div>
+      <div style="font-size:15px;font-weight:700;color:#082040;">Compare shortlisted players</div>
+      <div style="font-size:13px;color:#64748b;margin-top:4px;">Analyse top players side by side and uncover the best fit.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{% url 'compare' %}?{% for p in players|slice:':4' %}ids={{ p.player_id }}{% if not forloop.last %}&{% endif %}{% endfor %}" class="btn-blue"><i class="fas fa-code-compare"></i> Compare Top 4</a>
+    <a href="{% url 'compare' %}?{% for p in players|slice:':2' %}ids={{ p.player_id }}{% if not forloop.last %}&{% endif %}{% endfor %}" class="btn-ghost">Compare Top 2</a>
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="text-align:center;padding:64px 24px;max-width:560px;margin:0 auto;">
+  <i class="fas fa-star" style="font-size:48px;color:#e2e8f0;display:block;margin:0 auto 18px;"></i>
+  <div style="font-size:22px;font-weight:800;color:#082040;margin-bottom:10px;">{% if is_manager_or_head_scout %}No shortlists{% else %}Your shortlist is empty{% endif %}</div>
+  <div style="font-size:14px;color:#64748b;max-width:420px;margin:0 auto 24px;">{% if is_manager_or_head_scout %}No players have been added to any shortlist yet.{% else %}Browse players and add them to your shortlist to compare and prioritize the best talent.{% endif %}</div>
+  {% if not is_manager_or_head_scout %}<a href="{% url 'players' %}" class="btn-blue" style="margin-bottom:16px;"><i class="fas fa-users"></i> Browse Players</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if players %}
+<script>
+const PRIORITY_KEY_PREFIX = 'shortlist_priority_';
+
+function getStoredPriority(playerId) {
+    try {
+        return localStorage.getItem(PRIORITY_KEY_PREFIX + playerId) || 'Medium';
+    } catch {
+        return 'Medium';
+    }
+}
+
+function saveStoredPriority(playerId, value) {
+    try {
+        localStorage.setItem(PRIORITY_KEY_PREFIX + playerId, value);
+    } catch {
+    }
+}
+
+function updateSelectStyle(select) {
+    select.classList.remove('priority-select-low', 'priority-select-medium', 'priority-select-high');
+    if (select.value === 'Low') select.classList.add('priority-select-low');
+    else if (select.value === 'Medium') select.classList.add('priority-select-medium');
+    else if (select.value === 'High') select.classList.add('priority-select-high');
+}
+
+function initializePrioritySelect(select) {
+    const playerId = select.dataset.playerId;
+    const stored = getStoredPriority(playerId);
+    select.value = ['Low', 'Medium', 'High'].includes(stored) ? stored : 'Medium';
+    updateSelectStyle(select);
+    select.addEventListener('change', () => {
+        saveStoredPriority(playerId, select.value);
+        updateSelectStyle(select);
+    });
+}
+
+let draggedRow = null;
+
+function handleDragStart(event) {
+    draggedRow = event.currentTarget;
+    event.currentTarget.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', event.currentTarget.dataset.id);
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    const row = event.currentTarget;
+    if (row === draggedRow) return;
+    row.classList.add('drag-over');
+    event.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragLeave(event) {
+    event.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    const row = event.currentTarget;
+    row.classList.remove('drag-over');
+    if (!draggedRow || row === draggedRow) return;
+
+    const bounding = row.getBoundingClientRect();
+    const offset = event.clientY - bounding.top;
+    const tbody = row.parentElement;
+
+    if (offset > bounding.height / 2) tbody.insertBefore(draggedRow, row.nextSibling);
+    else tbody.insertBefore(draggedRow, row);
+}
+
+function handleDragEnd() {
+    if (draggedRow) {
+        draggedRow.classList.remove('dragging');
+        draggedRow = null;
+    }
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.priority-select').forEach(initializePrioritySelect);
+    document.querySelectorAll('#shortlistTable tbody tr').forEach(row => {
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('dragleave', handleDragLeave);
+        row.addEventListener('drop', handleDrop);
+        row.addEventListener('dragend', handleDragEnd);
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,433 @@
+{% extends 'scout/base.html' %}
+{% block title %}Compare Players — ScoutVision Pro{% endblock %}
+
+{% block extra_styles %}
+.compare-col{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;transition:all .2s}
+.compare-col:hover{box-shadow:0 4px 20px rgba(8,32,64,.08);border-color:#cbd5e1}
+.compare-header{padding:22px 20px;border-bottom:1px solid #f1f5f9;text-align:center;background:linear-gradient(135deg,#f8fafc,#fff)}
+.compare-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;margin:0 auto 12px;}
+.compare-avatar.forward{background:#fef2f2;color:#dc2626}
+.compare-avatar.midfielder{background:#eff6ff;color:#2563eb}
+.compare-avatar.defender{background:#f0fdf4;color:#16a34a}
+.compare-avatar.goalkeeper{background:#faf5ff;color:#9333ea}
+.compare-rank{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:6px}
+.compare-name{font-size:18px;font-weight:800;color:#082040;line-height:1.1;letter-spacing:-.3px}
+.compare-sub{font-size:12px;color:#94a3b8;margin-top:4px}
+.compare-market{font-size:15px;font-weight:700;color:#0ea5e9;margin-top:8px}
+.avail-pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#475569;margin-top:8px}
+.avail-pill .dot{width:8px;height:8px;border-radius:999px;display:inline-block}
+.attr-section{padding:16px 18px}
+.attr-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-bottom:12px}
+.compare-info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f8fafc;font-size:13px}
+.compare-info-row:last-child{border-bottom:none}
+.compare-info-lbl{color:#94a3b8;font-weight:500}
+.compare-info-val{color:#082040;font-weight:600}
+.cell-win{background:#f0fdf4;color:#15803d;font-weight:700;border-radius:8px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px}
+.cell-lose{color:#94a3b8}
+.cell-win i{font-size:10px;color:#f59e0b;margin-left:4px}
+.radar-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:center}
+.radar-pill{display:inline-flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:8px 12px;font-size:12px;color:#475569}
+.radar-pill-dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+.market-bar-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.market-bar-label{font-size:13px;font-weight:700;color:#082040;min-width:120px}
+.market-bar-track{flex:1;height:10px;background:#f1f5f9;border-radius:999px;overflow:hidden}
+.market-bar-fill{height:100%;border-radius:999px}
+.overall-analysis{display:grid;gap:18px}
+.overall-analysis-title{font-size:16px;font-weight:800;color:#082040;margin-bottom:8px}
+.overall-analysis-summary{font-size:13px;color:#64748b;line-height:1.6}
+.overall-top-pick{display:inline-flex;align-items:center;gap:6px;background:#082040;color:#fff;font-size:11px;font-weight:800;padding:5px 10px;border-radius:999px}
+{% endblock %}
+
+{% block content %}
+
+{% if not players %}
+<div style="display:grid;gap:20px;max-width:760px;margin:0 auto;padding:40px;">
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+    {% for i in "1234"|make_list %}
+    <div style="background:#f8fafc;border:2px dashed #cbd5e1;border-radius:16px;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#94a3b8;">
+      <i class="fas fa-user-plus" style="font-size:24px;color:#cbd5e1;"></i>
+      <div style="font-size:13px;font-weight:700;">Select a player</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="text-align:center;padding:20px 8px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;">
+    <div style="font-size:20px;font-weight:800;color:#082040;margin-bottom:8px;">Build a comparison</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:18px;">Pick 2–4 players from the database to compare their profiles, value and transfers side by side.</div>
+    <a href="{% url 'players' %}" class="btn-primary"><i class="fas fa-users"></i> Browse Players</a>
+  </div>
+</div>
+
+{% else %}
+
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+  <div>
+    <div style="font-size:20px;font-weight:800;color:#082040;letter-spacing:-.3px;">Player Comparison</div>
+    <div style="font-size:13px;color:#64748b;margin-top:2px;">Comparing {{ players|length }} player{{ players|length|pluralize }} side by side</div>
+  </div>
+  <a href="{% url 'players' %}" class="btn-ghost"><i class="fas fa-arrow-left"></i> Back to Players</a>
+</div>
+
+<!-- Player columns -->
+<div style="display:grid;grid-template-columns:{% for p in players %}1fr {% endfor %};gap:16px;margin-bottom:24px;">
+  {% for player in players %}
+  <div class="compare-col" data-player-index="{{ forloop.counter0 }}">
+    <div class="compare-header">
+      <div class="compare-rank">Player {{ forloop.counter }}</div>
+      <div class="compare-avatar {% if player.position == 'F' %}forward{% elif player.position == 'M' %}midfielder{% elif player.position == 'D' %}defender{% else %}goalkeeper{% endif %}">{{ player.name|first|upper }}</div>
+      <div class="compare-name">{{ player.name }}</div>
+      <div class="compare-sub">{% if player.current_team %}{{ player.current_team.name }}{% else %}Free Agent{% endif %}</div>
+      <div class="compare-market">{{ player.market_value_fmt }}</div>
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        {% if player.position == 'F' %}<span class="pos-badge pos-fw">{{ player.specific_position|default:"FWD" }}</span>
+        {% elif player.position == 'M' %}<span class="pos-badge pos-mf">{{ player.specific_position|default:"MID" }}</span>
+        {% elif player.position == 'D' %}<span class="pos-badge pos-df">{{ player.specific_position|default:"DEF" }}</span>
+        {% else %}<span class="pos-badge pos-gk">{{ player.specific_position|default:"GK" }}</span>{% endif %}
+      </div>
+      <div class="avail-pill"><span class="dot" style="background:{% if player.availability == 'available' %}#16a34a{% else %}#dc2626{% endif %};"></span>{{ player.availability|capfirst }}</div>
+    </div>
+
+    <!-- Profile info -->
+    <div class="attr-section">
+      <div class="attr-section-title">Profile</div>
+      <div class="compare-info-row" data-category="Age"><span class="compare-info-lbl">Age</span><span class="compare-info-val" data-value="{% if player.age %}{{ player.age }}{% endif %}">{% if player.age %}{{ player.age }} yrs{% else %}—{% endif %}</span></div>
+      <div class="compare-info-row" data-category="Height"><span class="compare-info-lbl">Height</span><span class="compare-info-val" data-value="{% if player.height %}{{ player.height }}{% endif %}">{% if player.height %}{{ player.height }} cm{% else %}—{% endif %}</span></div>
+      <div class="compare-info-row"><span class="compare-info-lbl">Foot</span><span class="compare-info-val">{% if player.preferred_foot %}{{ player.preferred_foot }}{% else %}—{% endif %}</span></div>
+      <div class="compare-info-row"><span class="compare-info-lbl">Nationality</span><span class="compare-info-val">{% if player.nationality %}{{ player.nationality }}{% else %}—{% endif %}</span></div>
+      <div class="compare-info-row" data-category="Market Value"><span class="compare-info-lbl">Market Value</span><span class="compare-info-val" data-value="{% if player.market_value %}{{ player.market_value }}{% endif %}" style="color:#0ea5e9;">{{ player.market_value_fmt }}</span></div>
+      <div class="compare-info-row"><span class="compare-info-lbl">Contract</span><span class="compare-info-val">{{ player.contract_until|default:"—" }}</span></div>
+      <div class="compare-info-row" data-category="Transfers"><span class="compare-info-lbl">Transfers</span><span class="compare-info-val" data-value="{{ player.transfers|length }}">{{ player.transfers|length }}</span></div>
+    </div>
+    <!-- Attributes bars -->
+    {% if player.attributes %}
+    <div class="attr-section" style="border-top:1px solid #f1f5f9;">
+      <div class="attr-section-title">Attributes</div>
+      {% if player.attributes.attacking %}
+      <div class="attr-bar-wrap">
+        <div class="attr-bar-top"><span>Attacking</span><span class="attr-bar-val">{{ player.attributes.attacking }}</span></div>
+        <div class="attr-bar"><div class="attr-bar-fill" style="width:{{ player.attributes.attacking }}%;background:linear-gradient(90deg,#ef4444,#f97316);"></div></div>
+      </div>
+      {% endif %}
+      {% if player.attributes.technical %}
+      <div class="attr-bar-wrap">
+        <div class="attr-bar-top"><span>Technical</span><span class="attr-bar-val">{{ player.attributes.technical }}</span></div>
+        <div class="attr-bar"><div class="attr-bar-fill" style="width:{{ player.attributes.technical }}%;background:linear-gradient(90deg,#0ea5e9,#6366f1);"></div></div>
+      </div>
+      {% endif %}
+      {% if player.attributes.tactical %}
+      <div class="attr-bar-wrap">
+        <div class="attr-bar-top"><span>Tactical</span><span class="attr-bar-val">{{ player.attributes.tactical }}</span></div>
+        <div class="attr-bar"><div class="attr-bar-fill" style="width:{{ player.attributes.tactical }}%;background:linear-gradient(90deg,#8b5cf6,#6366f1);"></div></div>
+      </div>
+      {% endif %}
+      {% if player.attributes.defending %}
+      <div class="attr-bar-wrap">
+        <div class="attr-bar-top"><span>Defending</span><span class="attr-bar-val">{{ player.attributes.defending }}</span></div>
+        <div class="attr-bar"><div class="attr-bar-fill" style="width:{{ player.attributes.defending }}%;background:linear-gradient(90deg,#16a34a,#0ea5e9);"></div></div>
+      </div>
+      {% endif %}
+      {% if player.attributes.creativity %}
+      <div class="attr-bar-wrap" style="margin-bottom:0;">
+        <div class="attr-bar-top"><span>Creativity</span><span class="attr-bar-val">{{ player.attributes.creativity }}</span></div>
+        <div class="attr-bar"><div class="attr-bar-fill" style="width:{{ player.attributes.creativity }}%;background:linear-gradient(90deg,#f59e0b,#ef4444);"></div></div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Strengths / Weaknesses -->
+    {% if player.strengths or player.weaknesses %}
+    <div class="attr-section" style="border-top:1px solid #f1f5f9;">
+      {% if player.strengths %}
+      <div class="attr-section-title">Strengths</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+        {% for s in player.strengths %}<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:11px;font-weight:500;padding:3px 9px;border-radius:5px;">{{ s }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      {% if player.weaknesses %}
+      <div class="attr-section-title">Weaknesses</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        {% for w in player.weaknesses %}<span style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:11px;font-weight:500;padding:3px 9px;border-radius:5px;">{{ w }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Shortlist button -->
+    <div style="padding:14px 18px;border-top:1px solid #f1f5f9;background:#fafbfc;">
+      <form method="post" action="{% url 'add_shortlist' %}">
+        {% csrf_token %}
+        <input type="hidden" name="player_id" value="{{ player.id }}">
+        <input type="hidden" name="player_name" value="{{ player.name }}">
+        <input type="hidden" name="position" value="{{ player.position }}">
+        <input type="hidden" name="team" value="{% if player.current_team %}{{ player.current_team.name }}{% endif %}">
+        <input type="hidden" name="next" value="compare">
+        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;font-size:13px;"><i class="fas fa-star"></i> Add to Shortlist</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if players|length > 1 %}
+<div class="chart-card overall-analysis" style="margin-bottom:24px;">
+  <div class="overall-analysis-title">Overall Analysis</div>
+  <div id="overallBarContainer"></div>
+  <div class="overall-analysis-summary" id="winnerSummary">Based on 4 statistical categories. Calculating the top pick…</div>
+</div>
+{% endif %}
+
+<!-- Charts row -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+  <!-- Radar chart -->
+  <div class="chart-card">
+    <div class="chart-title">📊 Attribute Radar</div>
+    <div class="chart-sub">Overall attribute comparison across all 5 dimensions</div>
+    <canvas id="radarChart" height="260"></canvas>
+    <div id="radarLegend" class="radar-legend"></div>
+  </div>
+
+  <!-- Bar chart - market value -->
+  <div class="chart-card">
+    <div class="chart-title">💰 Market Value</div>
+    <div class="chart-sub">Estimated market value per player</div>
+    <canvas id="valueChart" height="260"></canvas>
+  </div>
+
+</div>
+
+<!-- Transfer history -->
+<div class="chart-card">
+  <div class="chart-title" style="margin-bottom:4px;">🔄 Transfer History</div>
+  <div class="chart-sub">Career moves for each player</div>
+  <div style="display:grid;grid-template-columns:{% for p in players %}1fr {% endfor %};gap:20px;">
+    {% for player in players %}
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#082040;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #f1f5f9;">{{ player.name }}</div>
+      {% if player.transfers %}
+        {% for t in player.transfers %}
+        <div style="padding:8px 0;border-bottom:1px solid #f8fafc;font-size:12px;">
+          <div style="color:#94a3b8;margin-bottom:2px;font-weight:500;">{{ t.transfer_date|slice:":4" }}</div>
+          <div style="color:#334155;">{{ t.from_team_name }} <span style="color:#94a3b8;">→</span> <strong style="color:#082040;">{{ t.to_team_name }}</strong></div>
+          <div style="font-size:11px;color:{% if t.fee > 0 %}#0ea5e9{% else %}#94a3b8{% endif %};margin-top:2px;">{{ t.fee_description }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="color:#cbd5e1;font-size:13px;">No transfer history</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if players %}
+<script>
+const players = {{ chart_data|safe }};
+const names = players.map(p => p.short_name || p.name.split(' ').slice(-1)[0]);
+const RADAR_COLORS = ['#0ea5e9','#16a34a','#dc2626','#9333ea'];
+const RADAR_BG = ['rgba(14,165,233,.08)','rgba(22,163,74,.08)','rgba(220,38,38,.08)','rgba(147,51,234,.08)'];
+const POSITION_COLOR = {F: '#dc2626', M: '#2563eb', D: '#16a34a', G: '#9333ea'};
+const POSITION_BG = {F: '#fef2f2', M: '#eff6ff', D: '#f0fdf4', G: '#faf5ff'};
+const ROW_CATEGORIES = ['Market Value','Age','Height','Transfers'];
+
+function formatMoney(value) {
+  if (value >= 1000000) return `€${(value/1000000).toFixed(1)}M`;
+  if (value >= 1000) return `€${(value/1000).toFixed(0)}K`;
+  return value ? `€${value}` : 'N/A';
+}
+
+function getPlayerIndex(element) {
+  const col = element.closest('.compare-col');
+  return col ? Number(col.dataset.playerIndex) : null;
+}
+
+function compareStatRows() {
+  ROW_CATEGORIES.forEach(category => {
+    const rows = Array.from(document.querySelectorAll(`.compare-info-row[data-category="${category}"] .compare-info-val[data-value]`));
+    if (!rows.length) return;
+    const values = rows.map(cell => {
+      const raw = cell.dataset.value;
+      return raw !== undefined && raw !== '' ? Number(raw) : NaN;
+    });
+    const numericValues = values.filter(v => !Number.isNaN(v));
+    if (!numericValues.length) return;
+
+    const best = category === 'Age' ? Math.min(...numericValues) : Math.max(...numericValues);
+    const tie = numericValues.filter(v => v === best).length > 1;
+
+    rows.forEach(cell => {
+      const raw = cell.dataset.value;
+      const value = raw !== undefined && raw !== '' ? Number(raw) : NaN;
+      cell.classList.remove('cell-win', 'cell-lose');
+      const idx = getPlayerIndex(cell);
+      if (Number.isNaN(value) || idx === null) return;
+      if (value === best && !tie) {
+        cell.classList.add('cell-win');
+        if (!cell.querySelector('.trophy-icon')) {
+          const icon = document.createElement('i');
+          icon.className = 'fas fa-trophy trophy-icon';
+          cell.appendChild(icon);
+        }
+      } else if (value !== best) {
+        cell.classList.add('cell-lose');
+      }
+    });
+  });
+}
+
+function buildRadarLegend(chart) {
+  const legend = document.getElementById('radarLegend');
+  if (!legend || !chart.data.datasets) return;
+  legend.innerHTML = chart.data.datasets.map((dataset, idx) => {
+    return `<span class="radar-pill"><span class="radar-pill-dot" style="background:${dataset.borderColor}"></span>${dataset.label}</span>`;
+  }).join('');
+}
+
+function buildOverallAnalysis() {
+  const container = document.getElementById('overallBarContainer');
+  const summary = document.getElementById('winnerSummary');
+  if (!container || !summary) return;
+  const winsByPlayer = players.map(() => 0);
+  const categoriesWon = players.map(() => []);
+
+  document.querySelectorAll('.compare-info-val.cell-win').forEach(cell => {
+    const idx = getPlayerIndex(cell);
+    if (idx === null) return;
+    winsByPlayer[idx] += 1;
+    const row = cell.closest('.compare-info-row');
+    if (row) categoriesWon[idx].push(row.dataset.category);
+  });
+
+  const totalStats = ROW_CATEGORIES.length;
+  const topWins = Math.max(...winsByPlayer);
+  const topIndex = winsByPlayer.indexOf(topWins);
+  const topPlayer = players[topIndex];
+  const topCategory = categoriesWon[topIndex]?.[0] || 'overall performance';
+
+  container.innerHTML = players.map((player, idx) => {
+    const width = totalStats ? Math.round((winsByPlayer[idx] / totalStats) * 100) : 0;
+    const badge = idx === topIndex && topWins > 0 ? `<span class="overall-top-pick">Top Pick</span>` : '';
+    return `
+      <div class="market-bar-row">
+        <div class="market-bar-label">${player.name} ${badge}</div>
+        <div class="market-bar-track">
+          <div class="market-bar-fill" style="width:${width}%;background:${POSITION_COLOR[player.position] || '#0ea5e9'}"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  summary.textContent = `Based on ${totalStats} statistical categories. ${topPlayer.name} leads in ${topCategory}.`;
+}
+
+function getBarColor(position) {
+  return POSITION_COLOR[position] || '#0ea5e9';
+}
+
+function getBarBackground(position) {
+  return POSITION_BG[position] || 'rgba(14,165,233,.12)';
+}
+
+
+function renderCharts() {
+  const radarDatasets = players.map((p, i) => ({
+    label: names[i],
+    data: [
+      p.attributes?.attacking || 0,
+      p.attributes?.technical || 0,
+      p.attributes?.tactical  || 0,
+      p.attributes?.defending || 0,
+      p.attributes?.creativity|| 0,
+    ],
+    backgroundColor: RADAR_BG[i % RADAR_BG.length],
+    borderColor: RADAR_COLORS[i % RADAR_COLORS.length],
+    pointBackgroundColor: RADAR_COLORS[i % RADAR_COLORS.length],
+    borderWidth: 2,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    fill: true,
+  }));
+
+  const radarCanvas = document.getElementById('radarChart');
+  if (players.some(p => p.attributes)) {
+    const radarChart = new Chart(radarCanvas, {
+      type: 'radar',
+      data: { labels: ['Attacking','Technical','Tactical','Defending','Creativity'], datasets: radarDatasets },
+      options: {
+        plugins: { legend: { labels: { color:'#334155', font:{ family:'Plus Jakarta Sans', size:12 } } } },
+        scales: {
+          r: {
+            min:0, max:100,
+            ticks: { color:'#94a3b8', backdropColor:'transparent', stepSize:25 },
+            grid: { color:'#f1f5f9' },
+            pointLabels: { color:'#334155', font:{ family:'Plus Jakarta Sans', size:12, weight:'600' } },
+            angleLines: { color:'#f1f5f9' }
+          }
+        }
+      }
+    });
+    buildRadarLegend(radarChart);
+  } else {
+    radarCanvas.parentElement.innerHTML += '<div style="text-align:center;padding:40px;color:#cbd5e1;font-size:13px;">No attribute data available for these players</div>';
+  }
+
+  new Chart(document.getElementById('valueChart'), {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [{
+        label: 'Market Value (€)',
+        data: players.map(p => p.market_value || 0),
+        backgroundColor: players.map(p => getBarColor(p.position)),
+        borderColor: players.map(p => getBarColor(p.position)),
+        borderWidth: 0,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => formatMoney(ctx.raw)
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color:'#64748b', font:{ family:'Plus Jakarta Sans' } }, grid: { display:false } },
+        y: { ticks: { color:'#94a3b8', font:{ family:'Plus Jakarta Sans' } }, grid: { color:'#f8fafc' } }
+      }
+    },
+    plugins: [{
+      id: 'marketValueLabels',
+      afterDraw(chart) {
+        const ctx = chart.ctx;
+        chart.getDatasetMeta(0).data.forEach((bar, index) => {
+          const value = chart.data.datasets[0].data[index];
+          const label = formatMoney(value);
+          ctx.save();
+          ctx.fillStyle = '#334155';
+          ctx.font = '600 11px Plus Jakarta Sans';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, bar.x, bar.y - 8);
+          ctx.restore();
+        });
+      }
+    }]
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  compareStatRows();
+  buildOverallAnalysis();
+  renderCharts();
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends 'scout/base.html' %}
+{% block title %}Users Management — Admin Panel{% endblock %}
+
+{% block extra_styles %}
+.admin-nav{display:flex;gap:0;border-bottom:1px solid #e2e8f0;margin-bottom:24px;padding-bottom:0}
+.admin-nav-link{padding:12px 16px;border-bottom:2px solid transparent;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:6px}
+.admin-nav-link:hover{color:#0ea5e9}
+.admin-nav-link.active{color:#082040;border-bottom-color:#0ea5e9}
+.stat-tile{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;text-align:center}
+.stat-tile .val{font-size:28px;font-weight:800;color:#082040}
+.stat-tile .lbl{font-size:12px;color:#94a3b8;margin-top:4px;font-weight:600}
+.user-table{width:100%;border-collapse:collapse}
+.user-table th{background:#f8fafc;font-size:11px;font-weight:700;color:#082040;padding:12px 14px;text-align:left;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px}
+.user-table td{padding:13px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#475569}
+.user-table tr:hover td{background:#f8fafc}
+.role-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.role-scout{background:#fef3c7;color:#92400e}
+.role-analyst{background:#bfdbfe;color:#1e40af}
+.role-head_scout{background:#bbf7d0;color:#15803d}
+.role-manager{background:#dbeafe;color:#0c4a6e}
+.status-active{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:#f0fdf4;color:#15803d;font-weight:600;font-size:11px}
+.status-inactive{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:#fef2f2;color:#dc2626;font-weight:600;font-size:11px}
+.admin-badge{display:inline-block;padding:2px 6px;background:#fbbf24;color:#78350f;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase}
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-size:20px;font-weight:800;color:#082040;letter-spacing:-.3px;">Admin Panel</div>
+    <div style="font-size:13px;color:#64748b;margin-top:2px;">User management & platform administration</div>
+  </div>
+</div>
+
+<!-- ADMIN NAVBAR -->
+<div class="admin-nav">
+  <a href="{% url 'admin_users' %}" class="admin-nav-link active">
+    <i class="fas fa-users"></i> Users
+  </a>
+  <a href="{% url 'admin_audit' %}" class="admin-nav-link">
+    <i class="fas fa-history"></i> Audit
+  </a>
+  <a href="{% url 'admin_logs' %}" class="admin-nav-link">
+    <i class="fas fa-file-alt"></i> Logs
+  </a>
+</div>
+
+<!-- KPI TILES -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
+  <div class="stat-tile">
+    <div class="val">{{ total_users }}</div>
+    <div class="lbl">Total Users</div>
+  </div>
+  <div class="stat-tile" style="border-left:3px solid #22c55e;">
+    <div class="val">{{ active_users }}</div>
+    <div class="lbl">Active Users</div>
+  </div>
+  <div class="stat-tile" style="border-left:3px solid #ef4444;">
+    <div class="val">{{ inactive_users }}</div>
+    <div class="lbl">Inactive Users</div>
+  </div>
+  <div class="stat-tile" style="border-left:3px solid #fbbf24;">
+    <div class="val">{{ superusers }}</div>
+    <div class="lbl">Administrators</div>
+  </div>
+</div>
+
+<!-- USERS TABLE -->
+<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+  <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div style="font-size:13px;font-weight:700;color:#082040;">All Users ({{ total_users }})</div>
+    <a href="{% url 'register' %}" class="btn-blue" style="padding:8px 14px;font-size:12px;text-decoration:none;">Create new user</a>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Date Joined</th>
+          <th>Last Login</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users_list %}
+          <tr>
+            <td>
+              <a href="{% url 'user_profile' user.id %}" style="font-weight:600;color:#082040;text-decoration:none;">{{ user.username }}</a>
+            </td>
+            <td>{{ user.email|default:"—" }}</td>
+            <td>
+              {% if user.is_superuser %}
+                <span class="role-badge role-manager">Manager</span>
+                <span class="admin-badge">Admin</span>
+              {% elif user.profile %}
+                <span class="role-badge role-{{ user.profile.role }}">{{ user.profile.get_role_display }}</span>
+              {% else %}
+                <span style="color:#94a3b8;font-size:11px;">No profile</span>
+              {% endif %}
+            </td>
+            <td>{{ user.date_joined|date:"M d, Y" }}</td>
+            <td>
+              {% if user.last_login %}
+                {{ user.last_login|date:"M d, Y" }}
+              {% else %}
+                <span style="color:#cbd5e1;">Never</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if user.is_active %}
+                <span class="status-active"><i class="fas fa-check-circle"></i> Active</span>
+              {% else %}
+                <span class="status-inactive"><i class="fas fa-times-circle"></i> Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if user.id != request.user.id %}
+                <form method="post" action="{% url 'toggle_user_active' user.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" style="background:none;border:none;color:#0ea5e9;cursor:pointer;font-size:12px;font-weight:600;padding:0;text-decoration:underline;">
+                    {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+                  </button>
+                </form>
+                <span style="color:#e2e8f0;margin:0 6px;">·</span>
+                <form method="post" action="{% url 'delete_user_admin' user.id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                  {% csrf_token %}
+                  <button type="submit" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:12px;font-weight:600;padding:0;text-decoration:underline;">Delete</button>
+                </form>
+              {% else %}
+                <span style="color:#94a3b8;font-size:11px;">Current user</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  {% if total_pages > 1 %}
+  <div style="padding:16px 20px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:center;gap:8px;">
+    {% if has_prev %}
+      <a href="?page={{ current_page|add:'-1' }}" style="background:#fff;border:1px solid #e2e8f0;color:#082040;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
+        <i class="fas fa-chevron-left"></i> Prev
+      </a>
+    {% endif %}
+    <span style="font-size:12px;color:#64748b;margin:0 8px;">
+      Page <strong style="color:#082040;">{{ current_page }}</strong> of {{ total_pages }}
+    </span>
+    {% if has_next %}
+      <a href="?page={{ current_page|add:'1' }}" style="background:#fff;border:1px solid #e2e8f0;color:#082040;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
+        Next <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

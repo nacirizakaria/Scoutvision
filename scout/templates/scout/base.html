@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}ScoutVision Pro{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;display:flex;flex-direction:column}
+
+    /* NAVBAR */
+    .topnav{height:62px;background:#082040;display:flex;align-items:center;padding:0 24px;gap:0;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(8,32,64,.3)}
+    .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:32px;flex-shrink:0}
+    .nav-logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#38bdf8,#0ea5e9);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+    .nav-logo-text{font-weight:800;font-size:15px;letter-spacing:.2px;color:#fff;line-height:1}
+    .nav-logo-sub{font-size:9px;color:#38bdf8;letter-spacing:2.5px;text-transform:uppercase;font-weight:600}
+    .nav-links{display:flex;align-items:center;gap:1px;flex:1}
+    .nav-link{display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:7px;color:rgba(255,255,255,.55);text-decoration:none;font-size:12.5px;font-weight:500;transition:all .15s;white-space:nowrap}
+    .nav-link:hover{background:rgba(255,255,255,.09);color:#fff}
+    .nav-link.active{background:rgba(56,189,248,.15);color:#38bdf8}
+    .nav-link i{font-size:11px;width:13px;text-align:center}
+    .nav-badge{background:#0ea5e9;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;margin-left:2px}
+    .nav-div{width:1px;height:26px;background:rgba(255,255,255,.12);margin:0 10px}
+    .nav-search-wrap{position:relative;margin-right:14px}
+    .nav-search{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 12px 7px 32px;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;width:190px;outline:none;transition:all .2s}
+    .nav-search:focus{background:rgba(255,255,255,.1);border-color:rgba(56,189,248,.5);width:230px}
+    .nav-search::placeholder{color:rgba(255,255,255,.28)}
+    .nav-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:11px;pointer-events:none}
+    .nav-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#0ea5e9);border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0}
+
+    /* LAYOUT */
+    .main-wrap{flex:1;max-width:1380px;width:100%;margin:0 auto;padding:28px 28px}
+
+    /* CARDS */
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;transition:box-shadow .2s,border-color .2s}
+    .card:hover{box-shadow:0 4px 20px rgba(8,32,64,.07);border-color:#cbd5e1}
+    .card-header{padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+    .card-title{font-size:14px;font-weight:700;color:#082040;letter-spacing:-.1px}
+
+    /* STAT TILES */
+    .stat-tile{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;transition:all .2s;position:relative;overflow:hidden}
+    .stat-tile::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#0ea5e9,#082040);opacity:0;transition:opacity .2s}
+    .stat-tile:hover{box-shadow:0 4px 20px rgba(8,32,64,.08);border-color:#cbd5e1}
+    .stat-tile:hover::after{opacity:1}
+    .stat-value{font-size:30px;font-weight:800;color:#082040;line-height:1;letter-spacing:-1px}
+    .stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-top:5px}
+    .stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px}
+
+    /* BUTTONS */
+    .btn-primary{background:#082040;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:13px;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+    .btn-primary:hover{background:#103a6e;transform:translateY(-1px);box-shadow:0 4px 14px rgba(8,32,64,.25)}
+    .btn-blue{background:#0ea5e9;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:13px;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+    .btn-blue:hover{background:#0284c7;transform:translateY(-1px);box-shadow:0 4px 14px rgba(14,165,233,.35)}
+    .btn-ghost{background:#fff;color:#334155;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:13px;padding:8px 16px;border-radius:9px;border:1px solid #e2e8f0;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+    .btn-ghost:hover{background:#f8fafc;border-color:#cbd5e1;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .btn-danger{background:#fff;color:#dc2626;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:13px;padding:8px 16px;border-radius:9px;border:1px solid #fecaca;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+    .btn-danger:hover{background:#fef2f2;border-color:#f87171}
+
+    /* BADGES */
+    .pos-badge{font-size:10px;font-weight:700;letter-spacing:.8px;padding:3px 8px;border-radius:5px;text-transform:uppercase}
+    .pos-fw{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+    .pos-mf{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+    .pos-df{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+    .pos-gk{background:#faf5ff;color:#9333ea;border:1px solid #e9d5ff}
+    .avail-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+    .avail-ok{background:#22c55e}
+    .avail-inj{background:#ef4444}
+    .avail-unk{background:#94a3b8}
+
+    /* TABLE */
+    .scout-table{width:100%;border-collapse:collapse}
+    .scout-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;padding:10px 16px;text-align:left;border-bottom:1px solid #f1f5f9;background:#fafbfc}
+    .scout-table td{padding:13px 16px;font-size:13px;color:#334155;border-bottom:1px solid #f8fafc}
+    .scout-table tr:hover td{background:#fafcff}
+    .scout-table tr:last-child td{border-bottom:none}
+
+    /* FORM */
+    .form-input{width:100%;background:#fff;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 14px;color:#1e293b;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
+    .form-input:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.1)}
+    .form-input::placeholder{color:#cbd5e1}
+    .form-label{display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+    select.form-input{cursor:pointer}
+
+    /* ALERTS */
+    .alert{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+    .alert-error{background:#fef2f2;border:1px solid #fecaca;color:#dc2626}
+    .alert-success{background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a}
+    .alert-info{background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb}
+
+    /* ATTR BAR */
+    .attr-bar-wrap{margin-bottom:10px}
+    .attr-bar-top{display:flex;justify-content:space-between;font-size:12px;font-weight:500;color:#475569;margin-bottom:5px}
+    .attr-bar-val{font-weight:700;color:#082040}
+    .attr-bar{height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden}
+    .attr-bar-fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+
+    /* MISC */
+    .chip{display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;color:#475569}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:#f1f5f9}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+
+    {% block extra_styles %}{% endblock %}
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="{% url 'dashboard' %}" class="nav-logo">
+    <div class="nav-logo-icon">⚽</div>
+    <div>
+      <div class="nav-logo-text">ScoutVision</div>
+      <div class="nav-logo-sub">Pro Platform</div>
+    </div>
+  </a>
+
+  <div class="nav-links">
+    {% with user_role=request.user.profile.role|default:'scout' is_manager=request.user.is_superuser %}
+      <!-- Dashboard - All authenticated users -->
+      <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"><i class="fas fa-chart-line"></i>Dashboard</a>
+
+      <!-- Profile - All authenticated users -->
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'user_profile' request.user.id %}" class="nav-link {% if request.resolver_match.url_name == 'user_profile' %}active{% endif %}"><i class="fas fa-user"></i>Profil</a>
+      {% endif %}
+
+      <!-- Players - All authenticated users -->
+      <a href="{% url 'players' %}" class="nav-link {% if request.resolver_match.url_name == 'players' %}active{% endif %}"><i class="fas fa-users"></i>Players</a>
+
+      <!-- Compare - All authenticated users -->
+      <a href="{% url 'compare' %}" class="nav-link {% if request.resolver_match.url_name == 'compare' %}active{% endif %}"><i class="fas fa-code-compare"></i>Compare</a>
+
+      <!-- Shortlist - Scout, Analyst, Head Scout, Manager -->
+      {% if user_role == 'scout' or user_role == 'analyst' or user_role == 'head_scout' or is_manager %}
+        <a href="{% url 'shortlist' %}" class="nav-link {% if request.resolver_match.url_name == 'shortlist' %}active{% endif %}">
+          <i class="fas fa-star"></i>Shortlist
+          {% if shortlist_count %}<span class="nav-badge">{{ shortlist_count }}</span>{% endif %}
+        </a>
+      {% endif %}
+
+      <!-- Recommendations - Scout only -->
+      {% if user_role == 'scout' or is_manager %}
+        <a href="{% url 'recommend' %}" class="nav-link {% if request.resolver_match.url_name == 'recommend' %}active{% endif %}"><i class="fas fa-wand-magic-sparkles"></i>Recommendations</a>
+      {% endif %}
+
+      <!-- Approvals - Head Scout, Manager -->
+      {% if user_role == 'head_scout' or is_manager %}
+        <a href="{% url 'head_scout_approvals' %}" class="nav-link {% if request.resolver_match.url_name == 'head_scout_approvals' %}active{% endif %}"><i class="fas fa-check-circle"></i>Approvals</a>
+      {% endif %}
+
+      <!-- Workflow - Manager only -->
+      {% if is_manager %}
+        <a href="{% url 'workflow_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'workflow_dashboard' %}active{% endif %}"><i class="fas fa-project-diagram"></i>Workflow</a>
+      {% endif %}
+
+      <!-- Admin Panel - Manager only -->
+      {% if is_manager %}
+        <a href="{% url 'admin_users' %}" class="nav-link {% if request.resolver_match.url_name in 'admin_users,admin_audit,admin_logs' %}active{% endif %}" style="color:#fca5a5;"><i class="fas fa-shield"></i>Admin<span style="width:6px;height:6px;background:#fca5a5;border-radius:50%;display:inline-block;margin-left:4px;"></span></a>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <div class="nav-div"></div>
+
+  <div class="nav-search-wrap">
+    <i class="fas fa-search nav-search-icon"></i>
+    <form method="get" action="{% url 'players' %}">
+      <input type="text" name="q" class="nav-search" placeholder="Search players...">
+    </form>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="text-align:right;">
+      <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.2;">
+    {{ request.user.username }}
+</div>
+
+{% if request.user.groups.first %}
+<div style="font-size:10px;color:#9ca3af;">
+    {{ request.user.groups.first.name }}
+</div>
+{% endif %}
+
+    </div>
+    <div class="nav-avatar">{{ request.user.username|first|upper }}</div>
+    <div class="nav-div"></div>
+    <a href="{% url 'logout' %}" class="nav-link" style="color:rgba(255,255,255,.4);padding:7px 10px;" title="Logout"><i class="fas fa-right-from-bracket"></i></a>
+  </div>
+</nav>
+
+<div class="main-wrap">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}">
+        <i class="fas fa-{% if message.tags == 'error' %}circle-exclamation{% elif message.tags == 'success' %}circle-check{% else %}circle-info{% endif %}"></i>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</div>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

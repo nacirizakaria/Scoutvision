@@ -1,0 +1,147 @@
+{% extends 'scout/base.html' %}
+{% block title %}Audit Logs — Admin Panel{% endblock %}
+
+{% block extra_styles %}
+.admin-nav{display:flex;gap:0;border-bottom:1px solid #e2e8f0;margin-bottom:24px;padding-bottom:0}
+.admin-nav-link{padding:12px 16px;border-bottom:2px solid transparent;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:6px}
+.admin-nav-link:hover{color:#0ea5e9}
+.admin-nav-link.active{color:#082040;border-bottom-color:#0ea5e9}
+.action-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.action-login{background:#d1fae5;color:#065f46}
+.action-logout{background:#f3f4f6;color:#374151}
+.action-register{background:#dbeafe;color:#0c4a6e}
+.action-shortlist_add{background:#e0e7ff;color:#3730a3}
+.action-shortlist_remove{background:#fed7aa;color:#92400e}
+.action-export_csv{background:#d8b4fe;color:#5b21b6}
+.action-user_toggle{background:#fbcfe8;color:#831843}
+.action-user_delete{background:#fecaca;color:#991b1b}
+.action-logs_clear{background:#bfdbfe;color:#1e40af}
+.log-table{width:100%;border-collapse:collapse}
+.log-table th{background:#f8fafc;font-size:11px;font-weight:700;color:#082040;padding:12px 14px;text-align:left;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px}
+.log-table td{padding:13px 14px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#475569}
+.log-table tr:hover td{background:#f8fafc}
+.filter-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <div style="font-size:20px;font-weight:800;color:#082040;letter-spacing:-.3px;">Admin Panel</div>
+    <div style="font-size:13px;color:#64748b;margin-top:2px;">User management & platform administration</div>
+  </div>
+</div>
+
+<!-- ADMIN NAVBAR -->
+<div class="admin-nav">
+  <a href="{% url 'admin_users' %}" class="admin-nav-link">
+    <i class="fas fa-users"></i> Users
+  </a>
+  <a href="{% url 'admin_audit' %}" class="admin-nav-link active">
+    <i class="fas fa-history"></i> Audit
+  </a>
+  <a href="{% url 'admin_logs' %}" class="admin-nav-link">
+    <i class="fas fa-file-alt"></i> Logs
+  </a>
+</div>
+
+<!-- FILTER BOX -->
+<form method="get" class="filter-box">
+  <div>
+    <label style="display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Action Type</label>
+    <select name="action_filter" style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Plus Jakarta Sans,sans-serif;background:#fff;cursor:pointer;">
+      <option value="">All Actions</option>
+      {% for action in action_types %}
+        <option value="{{ action }}" {% if action_filter == action %}selected{% endif %}>{{ action|title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label style="display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Date From</label>
+    <input type="date" name="date_from" value="{{ date_from }}" style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Plus Jakarta Sans,sans-serif;background:#fff;">
+  </div>
+
+  <div>
+    <label style="display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Date To</label>
+    <input type="date" name="date_to" value="{{ date_to }}" style="width:100%;padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:Plus Jakarta Sans,sans-serif;background:#fff;">
+  </div>
+
+  <div style="display:flex;gap:8px;">
+    <button type="submit" style="background:#082040;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:Plus Jakarta Sans,sans-serif;">
+      <i class="fas fa-filter"></i> Filter
+    </button>
+    <a href="{% url 'admin_audit' %}" style="background:#fff;color:#082040;border:1px solid #e2e8f0;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Plus Jakarta Sans,sans-serif;">Clear</a>
+  </div>
+</form>
+
+<!-- LOGS TABLE -->
+<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+  <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:13px;font-weight:700;color:#082040;">Audit Logs ({{ total_logs }})</div>
+    <form method="post" action="{% url 'clear_logs' %}" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete ALL logs? This cannot be undone.');">
+      {% csrf_token %}
+      <button type="submit" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;">
+        <i class="fas fa-trash"></i> Clear All
+      </button>
+    </form>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Detail</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td style="font-family:'DM Mono',monospace;font-size:11px;color:#64748b;">{{ log.timestamp|date:"M d, Y H:i" }}</td>
+            <td>
+              {% if log.user %}
+                <span style="font-weight:600;color:#082040;">{{ log.user.username }}</span>
+              {% else %}
+                <span style="color:#94a3b8;">System</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="action-badge action-{{ log.action }}">{{ log.action|title }}</span>
+            </td>
+            <td>
+              <span style="color:#64748b;">{{ log.detail|truncatewords:15 }}</span>
+            </td>
+            <td style="font-family:'DM Mono',monospace;font-size:11px;color:#94a3b8;">{{ log.ip_address|default:"—" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" style="text-align:center;padding:32px 16px;color:#94a3b8;">No logs found</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  {% if total_pages > 1 %}
+  <div style="padding:16px 20px;border-top:1px solid #f1f5f9;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+    {% if has_prev %}
+      <a href="?action_filter={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ current_page|add:'-1' }}" style="background:#fff;border:1px solid #e2e8f0;color:#082040;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
+        <i class="fas fa-chevron-left"></i> Prev
+      </a>
+    {% endif %}
+    <span style="font-size:12px;color:#64748b;margin:0 8px;">
+      Page <strong style="color:#082040;">{{ current_page }}</strong> of {{ total_pages }}
+    </span>
+    {% if has_next %}
+      <a href="?action_filter={{ action_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ current_page|add:'1' }}" style="background:#fff;border:1px solid #e2e8f0;color:#082040;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">
+        Next <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

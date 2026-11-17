@@ -1,0 +1,673 @@
+{% extends 'scout/base.html' %}
+{% block title %}{{ profile.name|default:"Player" }} — ScoutVision Pro{% endblock %}
+
+{% block extra_styles %}
+.profile-hero{background:linear-gradient(135deg,#082040 0%,#1a4f95 100%);border-radius:16px;padding:32px;margin-bottom:24px;color:#fff;position:relative;overflow:hidden}
+.profile-hero::before{content:'';position:absolute;top:-80px;right:-80px;width:280px;height:280px;background:rgba(56,189,248,.07);border-radius:50%;pointer-events:none}
+.profile-hero::after{content:'';position:absolute;bottom:-70px;left:-70px;width:220px;height:220px;background:rgba(255,255,255,.08);border-radius:50%;pointer-events:none}
+.profile-avatar{width:76px;height:76px;border-radius:18px;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;border-radius:16px}
+.hero-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);font-size:12px;color:#fff}
+.hero-stats{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:18px}
+.hero-stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 12px;font-size:12px;color:#fff;display:inline-flex;align-items:center;gap:8px}
+.hero-stat strong{font-size:13px;font-weight:700}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px;margin-bottom:20px}
+.info-item{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;border-left:3px solid transparent}
+.info-item.info-nationality{border-left-color:#0d9488}
+.info-item.info-age{border-left-color:#2563eb}
+.info-item.info-height{border-left-color:#16a34a}
+.info-item.info-foot{border-left-color:#f97316}
+.info-item.info-contract{border-left-color:#dc2626}
+.info-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;font-weight:600;margin-bottom:6px;opacity:.6}
+.info-val{font-size:20px;font-weight:700;color:#082040;line-height:1}
+
+/* Big stat tiles */
+.sstat{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:18px 16px;text-align:center;position:relative;overflow:hidden;transition:all .2s}
+.sstat:hover{box-shadow:0 4px 16px rgba(8,32,64,.08);border-color:#cbd5e1;transform:translateY(-2px)}
+.sstat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.sstat-val{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px}
+.sstat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;font-weight:600;margin-top:5px}
+.sstat-sub{font-size:11px;color:#94a3b8;margin-top:3px}
+
+.match-row{display:grid;grid-template-columns:90px 1fr 100px 60px 60px 80px;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid #f8fafc;font-size:13px;transition:background .15s}
+.match-row:hover{background:#fafcff}
+.match-row:last-child{border-bottom:none}
+.rating-badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:6px}
+.rating-high{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.rating-mid{background:#fffbeb;color:#d97706;border:1px solid #fde68a}
+.rating-low{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.rating-none{background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0}
+
+/* Tabs */
+.tab-bar{display:flex;flex-wrap:wrap;gap:10px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px;margin-bottom:18px}
+.tab-button{background:#f8fafc;border:1px solid #e5e7eb;border-radius:999px;color:#475569;font-size:13px;font-weight:700;padding:10px 18px;cursor:pointer;transition:all .2s}
+.tab-button.active{background:#082040;border-color:#082040;color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* Strengths & weaknesses */
+.sw-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.sw-column{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px}
+.sw-column h3{font-size:13px;font-weight:700;color:#082040;margin-bottom:12px}
+.sw-pill{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600}
+.sw-pill.strong{background:#ecfdf5;color:#166534}
+.sw-pill.weak{background:#fef2f2;color:#991b1b}
+.sw-pill i{font-size:14px}
+
+/* Notes */
+.note-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px;position:relative;border-left:4px solid #0ea5e9}
+.note-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;font-size:12px;color:#64748b}
+.note-stars{display:flex;align-items:center;gap:4px}
+.note-star{cursor:pointer;color:#cbd5e1;font-size:18px;transition:color .15s}
+.note-star.active{color:#f59e0b}
+.note-counter{font-size:11px;color:#94a3b8;margin-top:4px}
+
+.transfer-timeline{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden}
+.transfer-row{position:relative;display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #f8fafc;padding-left:32px}
+.transfer-row:last-child{border-bottom:none}
+.transfer-row::before{content:'';position:absolute;left:10px;top:16px;width:8px;height:8px;background:#082040;border:2px solid #fff;border-radius:50%}
+.transfer-row::after{content:'';position:absolute;left:13px;top:0;bottom:0;width:1px;background:#e2e8f0}
+.transfer-row:last-child::after{display:none}
+.transfer-year{font-size:12px;font-weight:700;color:#0ea5e9;min-width:36px}
+
+.section-hdr{font-size:14px;font-weight:700;color:#082040;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-hdr::before{content:'';width:3px;height:18px;background:#0ea5e9;border-radius:2px;display:inline-block}
+
+/* Skeleton */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite}
+{% endblock %}
+
+{% block content %}
+{% if error %}<div class="alert alert-error"><i class="fas fa-circle-exclamation"></i>{{ error }}</div>{% endif %}
+
+{% if profile %}
+
+<!-- Back + actions -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+  <a href="{% url 'players' %}" class="btn-ghost"><i class="fas fa-arrow-left"></i> Back to Players</a>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if in_shortlist %}
+    <form method="post" action="{% url 'remove_shortlist' %}">{% csrf_token %}
+      <input type="hidden" name="player_id" value="{{ profile.id }}">
+      <button type="submit" class="btn-danger"><i class="fas fa-star"></i> Remove from Shortlist</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'add_shortlist' %}">{% csrf_token %}
+      <input type="hidden" name="player_id" value="{{ profile.id }}">
+      <input type="hidden" name="player_name" value="{{ profile.name }}">
+      <input type="hidden" name="position" value="{{ profile.position_label }}">
+      <input type="hidden" name="team" value="{% if profile.current_team %}{{ profile.current_team.name }}{% endif %}">
+      <input type="hidden" name="next" value="player_profile">
+      <button type="submit" class="btn-blue"><i class="fas fa-star"></i> Add to Shortlist</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'compare' %}?ids={{ profile.id }}" class="btn-ghost"><i class="fas fa-code-compare"></i> Compare</a>
+  </div>
+</div>
+
+<!-- Hero -->
+<div class="profile-hero">
+  <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;position:relative;z-index:2;">
+    <div class="profile-avatar" id="playerAvatar">{{ profile.name|first|upper }}</div>
+    <div style="flex:1;min-width:220px;">
+      <div style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1;">{{ profile.name }}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:5px;">
+        {% if profile.current_team %}{{ profile.current_team.name }} · {{ profile.current_team.country }}{% else %}Free Agent{% endif %}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        {% if profile.position == 'F' %}<span class="pos-badge pos-fw">{{ profile.specific_position|default:"FWD" }}</span>
+        {% elif profile.position == 'M' %}<span class="pos-badge pos-mf">{{ profile.specific_position|default:"MID" }}</span>
+        {% elif profile.position == 'D' %}<span class="pos-badge pos-df">{{ profile.specific_position|default:"DEF" }}</span>
+        {% else %}<span class="pos-badge pos-gk">GK</span>{% endif %}
+        {% for pos in profile.positions_detailed %}<span class="pos-badge pos-df" style="opacity:.75;">{{ pos }}</span>{% endfor %}
+        <span class="hero-pill">{{ profile.nationality|default:"Unknown" }}</span>
+        <span class="hero-pill" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);">
+          {% if profile.contract_until %}
+            {% with year=profile.contract_until|slice:":4" %}
+              {% if year|add:'0' < 2026 %}
+                <span style="color:#fca5a5">Expired</span>
+              {% elif year|add:'0' <= 2027 %}
+                <span style="color:#fbbf24">Expiring Soon</span>
+              {% else %}
+                <span style="color:#86efac">Under Contract</span>
+              {% endif %}
+            {% endwith %}
+          {% else %}
+            Unknown Contract
+          {% endif %}
+        </span>
+      </div>
+    </div>
+    <div style="text-align:right;position:relative;z-index:2;min-width:200px;">
+      <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px;">Market Value</div>
+      <div style="font-size:38px;font-weight:800;color:#38bdf8;letter-spacing:-1px;line-height:1;" id="heroMarketValue">{{ profile.market_value_fmt }}</div>
+      {% if profile.contract_until %}<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:5px;">Until {{ profile.contract_until }}</div>{% endif %}
+      <div class="hero-stats">
+        <span class="hero-stat">Age <strong>{% if profile.age %}{{ profile.age }}{% else %}—{% endif %}</strong></span>
+        <span class="hero-stat">Foot <strong>{% if profile.preferred_foot %}{{ profile.preferred_foot }}{% else %}—{% endif %}</strong></span>
+        <span class="hero-stat">Height <strong>{% if profile.height %}{{ profile.height }}cm{% else %}—{% endif %}</strong></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Profile info grid -->
+<div class="info-grid">
+  <div class="info-item info-age"><div class="info-lbl">Age</div><div class="info-val">{% if profile.age %}{{ profile.age }} yrs{% else %}—{% endif %}</div></div>
+  <div class="info-item"><div class="info-lbl">Date of Birth</div><div class="info-val" style="font-size:14px;">{{ profile.date_of_birth|default:"—" }}</div></div>
+  <div class="info-item info-nationality"><div class="info-lbl">Nationality</div><div class="info-val" style="font-size:14px;">{{ profile.nationality|default:"—" }}</div></div>
+  <div class="info-item info-height"><div class="info-lbl">Height</div><div class="info-val">{% if profile.height %}{{ profile.height }} cm{% else %}—{% endif %}</div></div>
+  <div class="info-item"><div class="info-lbl">Weight</div><div class="info-val">{% if profile.weight %}{{ profile.weight }} kg{% else %}—{% endif %}</div></div>
+  <div class="info-item info-foot"><div class="info-lbl">Preferred Foot</div><div class="info-val">{% if profile.preferred_foot %}{{ profile.preferred_foot }} foot{% else %}—{% endif %}</div></div>
+  <div class="info-item"><div class="info-lbl">Jersey #</div><div class="info-val">{% if profile.jersey_number %}#{{ profile.jersey_number }}{% else %}—{% endif %}</div></div>
+  <div class="info-item"><div class="info-lbl">Position</div><div class="info-val" style="font-size:14px;">{{ profile.position_label }}</div></div>
+  <div class="info-item info-contract"><div class="info-lbl">Contract Status</div><div class="info-val" style="font-size:14px;">
+    {% if profile.contract_until %}
+      {% with year=profile.contract_until|slice:":4" %}
+        {% if year|add:'0' < 2026 %}
+          Expired
+        {% elif year|add:'0' <= 2027 %}
+          Expiring Soon
+        {% else %}
+          Under Contract
+        {% endif %}
+      {% endwith %}
+    {% else %}
+      Unknown
+    {% endif %}
+  </div></div>
+</div>
+
+<!-- Tabbed sections -->
+<div class="tab-bar">
+  <button type="button" class="tab-button active" data-tab="tab-season">Season Stats</button>
+  <button type="button" class="tab-button" data-tab="tab-match">Match Log</button>
+  <button type="button" class="tab-button" data-tab="tab-sw">Strengths & Weaknesses</button>
+  <button type="button" class="tab-button" data-tab="tab-notes">Scout Notes</button>
+</div>
+
+<div class="tab-content active" id="tab-season">
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><div class="card-title">📊 Season Statistics</div></div>
+    <div id="statsSection" style="padding:20px;">
+      <div id="statsSkeleton" style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <span style="font-size:13px;color:#64748b;font-weight:500;">
+            {% if profile.name %}Loading player statistics…{% else %}Loading statistics…{% endif %}
+          </span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:16px;">
+          {% for i in "123456789"|make_list %}<div class="skeleton" style="height:80px;"></div>{% endfor %}
+        </div>
+      </div>
+      <div id="statsContent" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <div class="card-title">📊 Attribute Radar</div>
+      <span id="radarSource" style="font-size:11px;color:#94a3b8;">Loading…</span>
+    </div>
+    <div style="padding:20px;"><canvas id="playerRadar" height="280"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;display:none;" id="ratingChartCard">
+    <div class="card-header"><div class="card-title">⭐ Rating History (last 12 months)</div></div>
+    <div style="padding:20px;"><canvas id="ratingChart" height="120"></canvas></div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-match">
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><div class="card-title">📋 Match Log</div></div>
+    <div id="matchLogContent" style="padding:20px;"></div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-sw">
+  <div class="sw-grid">
+    <div class="sw-column">
+      <h3>Strengths</h3>
+      {% if profile.strengths %}
+        {% for s in profile.strengths %}
+          <div class="sw-pill strong"><i class="fas fa-circle-check"></i>{{ s }}</div>
+        {% endfor %}
+      {% else %}
+        <div style="color:#64748b;font-size:13px;">No strengths data available.</div>
+      {% endif %}
+    </div>
+    <div class="sw-column">
+      <h3>Weaknesses</h3>
+      {% if profile.weaknesses %}
+        {% for w in profile.weaknesses %}
+          <div class="sw-pill weak"><i class="fas fa-circle-xmark"></i>{{ w }}</div>
+        {% endfor %}
+      {% else %}
+        <div style="color:#64748b;font-size:13px;">No weaknesses data available.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="tab-notes">
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <div class="card-title">📝 Scout Notes</div>
+      <span style="font-size:12px;color:#94a3b8;">{{ notes|length }} note{{ notes|length|pluralize }}</span>
+    </div>
+    <div style="padding:20px;">
+      <form method="post" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:20px;">
+        {% csrf_token %}
+        <div style="margin-bottom:12px;">
+          <label class="form-label">Add a note</label>
+          <textarea name="note_text" id="noteText" class="form-input" rows="3" placeholder="Your scouting observations..." style="resize:vertical;"></textarea>
+          <div id="noteCounter" class="note-counter">0 / 500</div>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:12px;">
+          <div style="width:90px;"><label class="form-label">Rating (1–10)</label><input type="number" name="rating" class="form-input" min="1" max="10" value="7"></div>
+          <button type="submit" class="btn-primary" style="height:44px;min-width:140px;"><i class="fas fa-save"></i> Save Note</button>
+        </div>
+      </form>
+      {% for note in notes %}
+      <div class="note-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            {% for i in "1234567890"|make_list %}<span style="color:{% if forloop.counter <= note.rating %}#f59e0b{% else %}#e2e8f0{% endif %};font-size:13px;">★</span>{% endfor %}
+            <span style="font-size:12px;font-weight:700;color:#082040;margin-left:4px;">{{ note.rating }}/10</span>
+          </div>
+          <span style="font-size:11px;color:#94a3b8;">{{ note.created_at|date:"M d, Y" }}</span>
+        </div>
+        <div style="font-size:13px;color:#334155;line-height:1.6;">{{ note.note }}</div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:30px;color:#94a3b8;">
+        <i class="fas fa-note-sticky" style="font-size:24px;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
+        No notes yet. Add your first observation above.
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Transfers -->
+{% if profile.transfers %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header">
+    <div class="card-title">🔄 Transfer History</div>
+    <span style="font-size:12px;color:#94a3b8;">{{ profile.transfers|length }} move{{ profile.transfers|length|pluralize }}</span>
+  </div>
+  <div style="padding:8px 20px 12px;">
+    {% for t in profile.transfers %}
+    <div class="transfer-row">
+      <div class="transfer-year">{{ t.transfer_date|slice:":4" }}</div>
+      <div style="flex:1;font-size:13px;"><span style="color:#94a3b8;">{{ t.from_team_name }}</span><span style="margin:0 8px;color:#cbd5e1;">→</span><strong style="color:#082040;">{{ t.to_team_name }}</strong></div>
+      <div style="font-size:12px;{% if t.fee > 0 %}color:#0ea5e9;font-weight:600;{% else %}color:#cbd5e1;{% endif %}">{{ t.fee_description }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+
+{% else %}
+<div style="text-align:center;padding:80px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;">
+  <div style="font-size:13px;color:#94a3b8;">Player not found.</div>
+  <a href="{% url 'players' %}" class="btn-primary" style="margin-top:16px;display:inline-flex;">Back to Players</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if profile %}
+<script>
+const profileData  = {{ chart_data|safe }};
+const playerId     = {{ player_id }};
+const playerName   = "{{ player_name|escapejs }}";
+
+let radarChart = null;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function ratingBadge(r) {
+  if (!r) return '<span class="rating-badge rating-none">N/A</span>';
+  if (r >= 7.5) return `<span class="rating-badge rating-high">${r}</span>`;
+  if (r >= 6.0) return `<span class="rating-badge rating-mid">${r}</span>`;
+  return `<span class="rating-badge rating-low">${r}</span>`;
+}
+function cardIcon(y, r) {
+  let h = '';
+  if (y) h += '<span style="display:inline-block;width:11px;height:15px;background:#eab308;border-radius:2px;margin-right:3px;"></span>';
+  if (r) h += '<span style="display:inline-block;width:11px;height:15px;background:#dc2626;border-radius:2px;"></span>';
+  return h || '<span style="color:#e2e8f0;">—</span>';
+}
+function pct(val, max=100) { return Math.min(100, Math.round((val / max) * 100)); }
+
+// ── Build season stats HTML (API-Football) ───────────────────────────────────
+function buildSeasonStats(s) {
+  if (!s || !Object.keys(s).length) return '';
+
+  const tiles = [
+    {val: s.goals,           lbl: 'Goals',         sub: `${s.appearances} apps`,          color:'#ef4444', border:'#ef4444'},
+    {val: s.assists,         lbl: 'Assists',        sub: `${s.minutes} min`,               color:'#0ea5e9', border:'#0ea5e9'},
+    {val: s.shots_total,     lbl: 'Shots',          sub: `${s.shots_on} on target`,        color:'#f97316', border:'#f97316'},
+    {val: s.avg_rating,      lbl: 'Avg Rating',     sub: `${s.appearances} games`,         color:'#f59e0b', border:'#f59e0b'},
+    {val: s.passes_key,      lbl: 'Key Passes',     sub: `${s.passes_total} total`,        color:'#6366f1', border:'#6366f1'},
+    {val: s.dribbles_success,lbl: 'Dribbles',       sub: `${s.dribbles_pct}% success`,     color:'#8b5cf6', border:'#8b5cf6'},
+    {val: s.duels_won,       lbl: 'Duels Won',      sub: `${s.duels_won_pct}% of ${s.duels_total}`, color:'#16a34a', border:'#16a34a'},
+    {val: s.tackles,         lbl: 'Tackles',        sub: `${s.interceptions} interceptions`,color:'#0891b2', border:'#0891b2'},
+    {val: s.minutes,         lbl: 'Minutes',        sub: `${s.appearances} started`,       color:'#64748b', border:'#94a3b8'},
+    {val: s.yellow_cards,    lbl: 'Yellow Cards',   sub: `${s.red_cards} red`,             color:'#d97706', border:'#d97706'},
+  ];
+  if (s.penalty_scored > 0) {
+    tiles.splice(3, 0, {val: s.penalty_scored, lbl: 'Penalties', sub: `${s.penalty_missed} missed`, color:'#9333ea', border:'#9333ea'});
+  }
+
+  // Competitions breakdown
+  let compsHtml = '';
+  if (s.competitions && s.competitions.length > 1) {
+    compsHtml = `
+      <div style="margin-bottom:20px;">
+        <div class="section-hdr" style="margin-bottom:12px;">By Competition</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;">
+          ${s.competitions.map(c => `
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;min-width:160px;">
+              <div style="font-size:12px;font-weight:700;color:#082040;margin-bottom:6px;">${c.league}</div>
+              <div style="display:flex;gap:14px;">
+                <div style="text-align:center;"><div style="font-size:16px;font-weight:800;color:#ef4444;">${c.goals}</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;">Goals</div></div>
+                <div style="text-align:center;"><div style="font-size:16px;font-weight:800;color:#0ea5e9;">${c.assists}</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;">Assists</div></div>
+                <div style="text-align:center;"><div style="font-size:16px;font-weight:800;color:#082040;">${c.appearances}</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;">Apps</div></div>
+                ${c.rating ? `<div style="text-align:center;"><div style="font-size:16px;font-weight:800;color:#f59e0b;">${parseFloat(c.rating).toFixed(1)}</div><div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;">Rtg</div></div>` : ''}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="section-hdr" style="margin-bottom:14px;">
+      Season Statistics
+      <span style="font-size:11px;color:#94a3b8;font-weight:400;">· ${s.season || '2023/24'} · API-Football</span>
+      ${s.team ? `<span style="font-size:11px;color:#64748b;font-weight:500;margin-left:8px;">${s.team}</span>` : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:20px;">
+      ${tiles.map(t => `
+        <div class="sstat" style="border-bottom:3px solid ${t.border}30;">
+          <div class="sstat-val" style="color:${t.color};">${t.val ?? '—'}</div>
+          <div class="sstat-lbl">${t.lbl}</div>
+          <div class="sstat-sub">${t.sub}</div>
+        </div>`).join('')}
+    </div>
+    ${compsHtml}`;
+}
+
+// ── Build match stats HTML (bzzoiro) ─────────────────────────────────────────
+function buildMatchStats(s) {
+  if (!s || !s.appearances) return '';
+  const tiles = [
+    {val: s.appearances, lbl: 'Appearances', color:'#082040'},
+    {val: s.goals,       lbl: 'Goals',       color:'#ef4444'},
+    {val: s.avg_rating || '—', lbl: 'Avg Rating', color:'#f59e0b'},
+    {val: s.yellow_cards, lbl: 'Yellows',    color:'#d97706'},
+    {val: s.red_cards,   lbl: 'Reds',        color:'#dc2626'},
+    {val: s.sub_in,      lbl: 'Sub In',      color:'#6366f1'},
+    {val: s.sub_out,     lbl: 'Sub Out',     color:'#64748b'},
+  ];
+  if (s.clean_sheets) tiles.push({val: s.clean_sheets, lbl: 'Clean Sheets', color:'#16a34a'});
+
+  let matchRows = '';
+  if (s.recent_matches?.length) {
+    const rows = s.recent_matches.map(m => `
+      <div class="match-row">
+        <div><div style="font-size:11px;color:#94a3b8;">${m.date}</div><div style="font-size:10px;color:#cbd5e1;">${(m.league||'').slice(0,14)}</div></div>
+        <div><div style="font-size:13px;font-weight:500;color:#082040;">${m.home_team} <span style="color:#94a3b8;">vs</span> ${m.away_team}</div>
+        <div style="margin-top:3px;display:flex;gap:5px;">
+          ${m.sub_in!=null?`<span style="font-size:10px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;padding:1px 6px;border-radius:3px;">↑${m.sub_in}'</span>`:''}
+          ${m.sub_out!=null?`<span style="font-size:10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:1px 6px;border-radius:3px;">↓${m.sub_out}'</span>`:''}
+        </div></div>
+        <div style="text-align:center;"><span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;background:#f1f5f9;border-radius:6px;padding:3px 10px;">${m.home_score}–${m.away_score}</span></div>
+        <div style="text-align:center;">${m.goals>0?`<span style="font-size:14px;font-weight:800;color:#ef4444;">${m.goals}</span>`:'<span style="color:#e2e8f0;">0</span>'}</div>
+        <div style="text-align:center;display:flex;justify-content:center;">${cardIcon(m.yellow,m.red)}</div>
+        <div style="text-align:center;">${ratingBadge(m.rating)}</div>
+      </div>`).join('');
+
+    matchRows = `
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <div class="card-title">⚽ Recent Matches</div>
+          <span style="font-size:12px;color:#94a3b8;">${s.appearances} of ${s.total_matches_found}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:90px 1fr 100px 60px 60px 80px;gap:12px;padding:9px 20px;background:#fafbfc;border-bottom:1px solid #f1f5f9;">
+          ${['Date','Match','Score','Goals','Cards','Rating'].map(h=>`<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;">${h}</div>`).join('')}
+        </div>
+        ${rows}
+      </div>`;
+  }
+
+  return `
+    <div class="section-hdr" style="margin-bottom:14px;">Match Performance <span style="font-size:11px;color:#94a3b8;font-weight:400;">· last ${s.appearances} appearances</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-bottom:20px;">
+      ${tiles.map(t=>`<div class="sstat" style="border-bottom:3px solid ${t.color}30;">
+        <div class="sstat-val" style="color:${t.color};">${t.val}</div>
+        <div class="sstat-lbl">${t.lbl}</div>
+      </div>`).join('')}
+    </div>
+    ${matchRows}`;
+}
+
+// ── Draw radar chart ──────────────────────────────────────────────────────────
+function drawRadar(attrs, source) {
+  if (!attrs) {
+    document.getElementById('playerRadar').parentElement.innerHTML =
+      '<div style="text-align:center;padding:60px;color:#cbd5e1;font-size:13px;"><i class="fas fa-chart-radar" style="font-size:28px;display:block;margin-bottom:10px;color:#e2e8f0;"></i>No attribute data</div>';
+    document.getElementById('radarSource').textContent = 'No data';
+    return;
+  }
+  if (radarChart) radarChart.destroy();
+  radarChart = new Chart(document.getElementById('playerRadar'), {
+    type: 'radar',
+    data: {
+      labels: ['Attacking','Technical','Tactical','Defending','Creativity'],
+      datasets: [{
+        label: profileData.short_name || profileData.name,
+        data: [attrs.attacking||0, attrs.technical||0, attrs.tactical||0, attrs.defending||0, attrs.creativity||0],
+        backgroundColor: 'rgba(14,165,233,.12)',
+        borderColor: '#0ea5e9',
+        pointBackgroundColor: '#0ea5e9',
+        borderWidth: 2, pointRadius: 5,
+      }]
+    },
+    options: {
+      scales: { r: { min:0, max:100, ticks:{color:'#94a3b8',backdropColor:'transparent',stepSize:25}, grid:{color:'#f1f5f9'}, pointLabels:{color:'#334155',font:{family:'Plus Jakarta Sans',size:12,weight:'600'}}, angleLines:{color:'#e2e8f0'} } },
+      plugins: { legend: { labels: { color:'#334155', font:{family:'Plus Jakarta Sans'} } } }
+    }
+  });
+  document.getElementById('radarSource').textContent = source || `Att:${attrs.attacking} Tec:${attrs.technical} Tac:${attrs.tactical}`;
+}
+
+// ── Draw rating history chart ─────────────────────────────────────────────────
+function drawRatingHistory(history) {
+  if (!history?.length) return;
+  const card = document.getElementById('ratingChartCard');
+  card.style.display = 'block';
+  const labels = history.map(h => new Date(h.timestamp*1000).toLocaleDateString('en',{month:'short',day:'numeric'}));
+  const values = history.map(h => h.rating);
+  new Chart(document.getElementById('ratingChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Match Rating',
+        data: values,
+        borderColor: '#0ea5e9',
+        backgroundColor: 'rgba(14,165,233,.08)',
+        pointBackgroundColor: values.map(v => v>=7.5?'#16a34a':v>=6?'#f59e0b':'#ef4444'),
+        borderWidth: 2, pointRadius: 4, tension: 0.3, fill: true,
+      }]
+    },
+    options: {
+      scales: {
+        x: { ticks:{color:'#94a3b8',font:{family:'Plus Jakarta Sans',size:11}}, grid:{display:false} },
+        y: { min:5, max:10, ticks:{color:'#94a3b8',font:{family:'Plus Jakarta Sans'}}, grid:{color:'#f8fafc'} }
+      },
+      plugins: { legend:{display:false} }
+    }
+  });
+}
+
+// ── Load player image ─────────────────────────────────────────────────────────
+function loadPlayerImage(imageUrl) {
+  if (!imageUrl) return;
+  const avatar = document.getElementById('playerAvatar');
+  const img = new Image();
+  img.onload = () => {
+    avatar.innerHTML = `<img src="${imageUrl}" alt="Player">`;
+  };
+  img.onerror = () => {}; // keep initials if image fails
+  img.src = imageUrl;
+}
+
+function setActiveTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(panel => panel.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+  const active = document.getElementById(tabId);
+  if (active) active.classList.add('active');
+}
+
+function bindTabButtons() {
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+  });
+}
+
+function updateNoteStars(value) {
+  document.querySelectorAll('#noteStars .note-star').forEach(star => {
+    star.classList.toggle('active', Number(star.dataset.value) <= value);
+  });
+  const ratingInput = document.getElementById('noteRating');
+  if (ratingInput) ratingInput.value = value;
+}
+
+function bindNoteStars() {
+  const stars = document.querySelectorAll('#noteStars .note-star');
+  stars.forEach(star => {
+    star.addEventListener('click', () => updateNoteStars(Number(star.dataset.value)));
+  });
+}
+
+function updateNoteCounter() {
+  const textarea = document.getElementById('noteText');
+  const counter = document.getElementById('noteCounter');
+  if (!textarea || !counter) return;
+  const len = textarea.value.length;
+  counter.textContent = `${len} / 500`;
+}
+
+function bindNoteCounter() {
+  const textarea = document.getElementById('noteText');
+  if (!textarea) return;
+  textarea.addEventListener('input', () => {
+    if (textarea.value.length > 500) textarea.value = textarea.value.slice(0, 500);
+    updateNoteCounter();
+  });
+  updateNoteCounter();
+}
+
+function renderMatchLog(data) {
+  const container = document.getElementById('matchLogContent');
+  if (!container) return;
+  if (data && Object.keys(data).length) {
+    container.innerHTML = buildMatchStats(data);
+  } else {
+    container.innerHTML = '<div class="alert alert-info" style="margin-bottom:20px;"><i class="fas fa-circle-info"></i> No match log available for this player.</div>';
+  }
+}
+
+// ── AJAX fetch ────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  bindTabButtons();
+  bindNoteStars();
+  bindNoteCounter();
+  setActiveTab('tab-season');
+  const url = `/player/${playerId}/stats/?name=${encodeURIComponent(playerName)}`;
+  fetch(url, {headers: {'X-Requested-With':'XMLHttpRequest'}})
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('statsSkeleton').style.display = 'none';
+      const content = document.getElementById('statsContent');
+      let html = '';
+
+      // Season stats from API-Football
+      if (data.af_stats && Object.keys(data.af_stats).length) {
+        html += buildSeasonStats(data.af_stats);
+        // Build radar from API-Football stats (since AF has no attributes)
+        const s = data.af_stats;
+        const attrs = profileData.attributes;
+        if (attrs && Object.values(attrs).some(v => v > 0)) {
+          // Use bzzoiro attributes if available
+          drawRadar({attacking: attrs.attacking, technical: attrs.technical,
+                     tactical: attrs.tactical, defending: attrs.defending,
+                     creativity: attrs.creativity}, 'Attributes');
+        } else {
+          // Build radar from real AF stats — normalize to 0-100
+          const maxGoals = 40, maxShots = 200, maxDuels = 300, maxPasses = 1000, maxDribbles = 100;
+          drawRadar({
+            attacking:  Math.min(100, Math.round((s.goals / maxGoals) * 100)),
+            technical:  Math.min(100, Math.round((s.dribbles_success / maxDribbles) * 100)),
+            tactical:   Math.min(100, Math.round((s.passes_key / 50) * 100)),
+            defending:  Math.min(100, Math.round(((s.tackles + s.interceptions) / 100) * 100)),
+            creativity: Math.min(100, Math.round((s.assists / 20) * 100)),
+          }, 'From match stats');
+        }
+      } else {
+        // No AF stats — draw radar from bzzoiro if available
+        const attrs = profileData.attributes;
+        if (attrs && Object.values(attrs).some(v => v > 0)) {
+          drawRadar({attacking: attrs.attacking, technical: attrs.technical,
+                     tactical: attrs.tactical, defending: attrs.defending,
+                     creativity: attrs.creativity}, 'Attributes');
+        } else {
+          drawRadar(null);
+          document.getElementById('radarSource').textContent = 'No attribute data';
+        }
+      }
+
+      // Match stats from bzzoiro
+      if (data.match_stats) {
+        renderMatchLog(data.match_stats);
+      } else {
+        renderMatchLog(null);
+      }
+
+      if (!html) {
+        html = '<div class="alert alert-info" style="margin-bottom:20px;"><i class="fas fa-circle-info"></i> No statistics available for this player.</div>';
+      }
+
+      content.innerHTML = html;
+      content.style.display = 'block';
+
+      // Load player image from API-Football
+      if (data.image_url) loadPlayerImage(data.image_url);
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('statsSkeleton').style.display = 'none';
+      const attrs = profileData.attributes;
+      if (attrs && Object.values(attrs).some(v => v > 0)) {
+        drawRadar({attacking: attrs.attacking, technical: attrs.technical,
+                   tactical: attrs.tactical, defending: attrs.defending,
+                   creativity: attrs.creativity});
+      } else {
+        drawRadar(null);
+      }
+      document.getElementById('statsContent').innerHTML =
+        '<div class="alert alert-error" style="margin-bottom:20px;"><i class="fas fa-circle-exclamation"></i> Failed to load stats.</div>';
+      document.getElementById('statsContent').style.display = 'block';
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

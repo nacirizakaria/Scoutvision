@@ -1,0 +1,81 @@
+{% extends 'scout/base.html' %}
+
+{% block title %}Head Scout Approvals — ScoutVision Pro{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-semibold text-slate-900">Approvals du Head Scout</h1>
+            <p class="mt-2 text-sm text-slate-600">Passez en revue les recommandations des analystes et prenez une décision finale.</p>
+        </div>
+        <a href="{% url 'workflow_dashboard' %}" class="btn-primary">Tableau de bord du workflow</a>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div class="space-y-6">
+            {% for approval in pending_approvals %}
+                <div class="card p-6">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-semibold text-slate-900">{{ approval.player_name }}</h2>
+                            <p class="text-sm text-slate-500">Recommandé par {{ approval.analyst.username|default:'Analyse indisponible' }}</p>
+                        </div>
+                        <span class="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">En attente</span>
+                    </div>
+                    <div class="mt-5 space-y-4 text-slate-700">
+                        <div>
+                            <div class="text-sm text-slate-500">Note analyste</div>
+                            <div class="mt-1 text-lg font-semibold">{{ approval.analyst_rating }}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-slate-500">Commentaire</div>
+                            <div class="mt-1 rounded-3xl border border-slate-200 bg-slate-50 p-4">{{ approval.analyst_note|default:'Pas de commentaire fourni.' }}</div>
+                        </div>
+                        <form method="post" class="space-y-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="player_approval_id" value="{{ approval.id }}" />
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Décision finale</label>
+                                <select name="decision" class="form-input mt-2 w-full rounded-3xl border border-slate-300 bg-white p-4">
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700">Note de décision</label>
+                                <textarea name="head_scout_note" rows="3" class="form-input mt-2 w-full rounded-3xl border border-slate-300 bg-white p-4" placeholder="Optionnel">{{ approval.head_scout_note }}</textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Enregistrer la décision</button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-600">
+                    <p class="text-lg font-semibold">Aucune approbation en attente</p>
+                    <p class="mt-2">Toutes les recommandations ont été traitées.</p>
+                </div>
+            {% endfor %}
+        </div>
+        <aside class="space-y-6">
+            <div class="card p-6">
+                <h2 class="text-lg font-semibold text-slate-900">Résumé</h2>
+                <div class="mt-4 space-y-3 text-slate-700">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-500">En attente</span>
+                        <strong>{{ total_pending }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-500">Approuvés</span>
+                        <strong>{{ total_approved }}</strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-slate-500">Rejetés</span>
+                        <strong>{{ total_rejected }}</strong>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}
