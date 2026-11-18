@@ -52,26 +52,26 @@ The application combines player information, statistics, scouting shortlists, re
 
 ```text
 Scoutvision/
-??? core/
-?   ??? settings.py
-?   ??? urls.py
-?   ??? asgi.py
-?   ??? wsgi.py
-??? scout/
-?   ??? migrations/
-?   ??? templates/
-?   ??? admin.py
-?   ??? api_service.py
-?   ??? models.py
-?   ??? signals.py
-?   ??? tests.py
-?   ??? urls.py
-?   ??? views.py
-??? .env.example
-??? .gitignore
-??? manage.py
-??? requirements.txt
-??? README.md
+|-- core/
+|   |-- settings.py
+|   |-- urls.py
+|   |-- asgi.py
+|   `-- wsgi.py
+|-- scout/
+|   |-- migrations/
+|   |-- templates/
+|   |-- admin.py
+|   |-- api_service.py
+|   |-- models.py
+|   |-- signals.py
+|   |-- tests.py
+|   |-- urls.py
+|   `-- views.py
+|-- .env.example
+|-- .gitignore
+|-- manage.py
+|-- requirements.txt
+`-- README.md
 ```
 
 ## Getting started
