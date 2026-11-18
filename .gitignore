@@ -37,3 +37,12 @@ media/
 # Operating system
 .DS_Store
 Thumbs.db
+
+# Local release audit and temporary source backups
+PUBLIC_RELEASE_AUDIT.txt
+*.before_*
+*.backup_*
+*.security_backup_*
+
+# Additional temporary backup naming patterns
+*_backup_*
