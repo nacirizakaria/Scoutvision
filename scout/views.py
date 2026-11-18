@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.db.models import Count
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseNotAllowed
 from .models import Shortlist, PlayerNote, Profile, ActivityLog, PlayerApproval
 
 import csv
@@ -1211,22 +1211,57 @@ def edit_profile(request, user_id):
         return redirect('dashboard')
 
     profile, _ = Profile.objects.get_or_create(user=target_user)
-    role_name = 'Manager' if target_user.is_superuser else (profile.get_role_display() if profile.role else 'Scout')
+    role_name = 'Manager' if target_user.is_superuser else (
+        profile.get_role_display() if profile.role else 'Scout'
+    )
     user_role = get_user_role(target_user)
 
     if request.method == 'POST':
-        profile.bio = request.POST.get('bio', '').strip()
-        profile.phone = request.POST.get('phone', '').strip()
+        bio = request.POST.get('bio', '').strip()
+        phone = request.POST.get('phone', '').strip()
+
+        if len(phone) > 20:
+            messages.error(request, 'Phone number must not exceed 20 characters.')
+            return redirect('edit_profile', user_id=target_user.id)
+
+        assigned_scout = profile.assigned_scout
+
         if request.user.is_superuser:
-            assigned_id = request.POST.get('assigned_scout')
+            assigned_id = request.POST.get('assigned_scout', '').strip()
+
             if assigned_id:
-                assigned_user = User.objects.filter(id=assigned_id).first()
-                profile.assigned_scout = assigned_user
+                assigned_scout = User.objects.filter(
+                    id=assigned_id,
+                    is_active=True,
+                    profile__role='scout'
+                ).first()
+
+                if assigned_scout is None:
+                    messages.error(
+                        request,
+                        'Please select a valid active Scout.'
+                    )
+                    return redirect('edit_profile', user_id=target_user.id)
+            else:
+                assigned_scout = None
+
+        profile.bio = bio
+        profile.phone = phone
+
+        if request.user.is_superuser:
+            profile.assigned_scout = assigned_scout
+
         profile.save()
         messages.success(request, 'Profile updated successfully.')
         return redirect('user_profile', user_id=target_user.id)
 
-    assigned_scout_options = User.objects.filter(profile__role='scout').order_by('username') if request.user.is_superuser else []
+    assigned_scout_options = (
+        User.objects.filter(
+            is_active=True,
+            profile__role='scout'
+        ).order_by('username')
+        if request.user.is_superuser else []
+    )
 
     return render(
         request,
@@ -1241,10 +1276,11 @@ def edit_profile(request, user_id):
         }
     )
 
-
 @login_required
 @role_required('analyst_review')
 def analyst_review(request, shortlist_id):
+    from decimal import Decimal, InvalidOperation
+
     user_role = get_user_role(request.user)
     if user_role not in ['analyst', 'manager']:
         messages.error(request, 'Only Analysts and Managers can access this page.')
@@ -1256,32 +1292,115 @@ def analyst_review(request, shortlist_id):
         return redirect('shortlist')
 
     if user_role == 'analyst':
-        assigned_scout = getattr(request.user.profile, 'assigned_scout', None)
-        if assigned_scout and shortlist_entry.scout != assigned_scout:
-            messages.error(request, 'You are not assigned to this scout shortlist.')
+        profile = Profile.objects.filter(user=request.user).first()
+        assigned_scout = profile.assigned_scout if profile else None
+
+        if assigned_scout is None:
+            messages.error(
+                request,
+                'You must be assigned to a Scout before reviewing players.'
+            )
             return redirect('shortlist')
 
-    approval, _ = PlayerApproval.objects.get_or_create(
-        shortlist_entry=shortlist_entry,
-        defaults={
-            'player_id': shortlist_entry.player_id,
-            'player_name': shortlist_entry.player_name,
-            'scout': shortlist_entry.scout,
-            'analyst': request.user if user_role == 'analyst' else None,
-        }
-    )
+        if shortlist_entry.scout_id != assigned_scout.id:
+            messages.error(
+                request,
+                'You are not assigned to this Scout shortlist.'
+            )
+            return redirect('shortlist')
+
+    approval = PlayerApproval.objects.filter(
+        shortlist_entry=shortlist_entry
+    ).first()
 
     if request.method == 'POST':
-        approval.analyst_note = request.POST.get('analyst_note', '').strip()
-        approval.analyst_rating = float(request.POST.get('analyst_rating', 0))
-        approval.analyst_recommendation = request.POST.get('analyst_recommendation', 'pending')
+        raw_rating = request.POST.get('analyst_rating', '0').strip()
+        recommendation = request.POST.get(
+            'analyst_recommendation',
+            'pending'
+        )
+        analyst_note = request.POST.get('analyst_note', '').strip()
+
+        try:
+            rating = Decimal(raw_rating)
+            valid_rating = (
+                rating.is_finite()
+                and Decimal('0') <= rating <= Decimal('10')
+                and rating.as_tuple().exponent >= -1
+            )
+        except (InvalidOperation, ValueError, TypeError):
+            valid_rating = False
+            rating = None
+
+        if not valid_rating:
+            messages.error(
+                request,
+                'Invalid rating. Enter a value between 0 and 10 with at most one decimal place.'
+            )
+            return redirect('analyst_review', shortlist_id=shortlist_entry.id)
+
+        if recommendation not in ['recommend', 'reject', 'pending']:
+            messages.error(request, 'Invalid recommendation.')
+            return redirect('analyst_review', shortlist_id=shortlist_entry.id)
+
+        if (
+            user_role == 'analyst'
+            and approval is not None
+            and approval.analyst_id is not None
+            and approval.analyst_id != request.user.id
+        ):
+            messages.error(
+                request,
+                'This review has already been assigned to another Analyst.'
+            )
+            return redirect('shortlist')
+
+        approval, created = PlayerApproval.objects.get_or_create(
+            shortlist_entry=shortlist_entry,
+            defaults={
+                'player_id': shortlist_entry.player_id,
+                'player_name': shortlist_entry.player_name,
+                'scout': shortlist_entry.scout,
+                'analyst': request.user if user_role == 'analyst' else None,
+            }
+        )
+
+        if (
+            user_role == 'analyst'
+            and approval.analyst_id is not None
+            and approval.analyst_id != request.user.id
+        ):
+            messages.error(
+                request,
+                'This review has already been assigned to another Analyst.'
+            )
+            return redirect('shortlist')
+
+        approval.analyst_note = analyst_note
+        approval.analyst_rating = rating
+        approval.analyst_recommendation = recommendation
+
         if user_role == 'analyst':
             approval.analyst = request.user
+
         approval.save()
 
-        log_activity(request, 'analyst_review', f'Player approval {approval.id} updated with recommendation {approval.analyst_recommendation}')
+        log_activity(
+            request,
+            'analyst_review',
+            f'Player approval {approval.id} updated with recommendation {approval.analyst_recommendation}'
+        )
         messages.success(request, 'Review submitted successfully.')
         return redirect('shortlist')
+
+    if approval is None:
+        approval = PlayerApproval(
+            player_id=shortlist_entry.player_id,
+            player_name=shortlist_entry.player_name,
+            scout=shortlist_entry.scout,
+            shortlist_entry=shortlist_entry,
+            analyst=request.user if user_role == 'analyst' else None,
+        )
 
     return render(
         request,
@@ -1292,8 +1411,6 @@ def analyst_review(request, shortlist_id):
             'user_role': user_role,
         }
     )
-
-
 @login_required
 @role_required('head_scout_approvals')
 def head_scout_approvals(request):
@@ -1303,19 +1420,38 @@ def head_scout_approvals(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        approval_id = request.POST.get('player_approval_id')
+        approval_id = request.POST.get('player_approval_id', '').strip()
         decision = request.POST.get('decision')
         head_scout_note = request.POST.get('head_scout_note', '').strip()
 
-        approval = PlayerApproval.objects.filter(id=approval_id).first()
-        if approval and decision in ['approved', 'rejected']:
-            approval.head_scout_decision = decision
-            approval.head_scout_note = head_scout_note
-            approval.save()
-            log_activity(request, 'head_scout_decision', f'Approval {approval.id} set to {decision}')
+        if decision not in ['approved', 'rejected']:
+            messages.error(request, 'Unable to record decision.')
+            return redirect('head_scout_approvals')
+
+        try:
+            updated_count = PlayerApproval.objects.filter(
+                pk=approval_id,
+                analyst_recommendation='recommend',
+                head_scout_decision='pending'
+            ).update(
+                head_scout_decision=decision,
+                head_scout_note=head_scout_note
+            )
+        except (TypeError, ValueError):
+            updated_count = 0
+
+        if updated_count == 1:
+            log_activity(
+                request,
+                'head_scout_decision',
+                f'Approval {approval_id} set to {decision}'
+            )
             messages.success(request, 'Decision recorded.')
         else:
-            messages.error(request, 'Unable to record decision.')
+            messages.error(
+                request,
+                'Unable to record decision. This approval may no longer be pending.'
+            )
 
         return redirect('head_scout_approvals')
 
@@ -1543,37 +1679,70 @@ def admin_logs(request):
 @login_required
 @admin_only
 def toggle_user_active(request, user_id):
-    """Toggle user active/inactive status."""
-    if request.method == 'POST':
-        user = User.objects.get(id=user_id)
-        user.is_active = not user.is_active
-        user.save()
-        status = 'activated' if user.is_active else 'deactivated'
-        messages.success(request, f'User {user.username} has been {status}.')
-        log_activity(request, 'user_toggle', f'User {user.username} toggled to {status}')
-    return redirect('admin_users')
+    """Toggle an ordinary user's active status. Superusers are protected."""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
 
+    user = User.objects.filter(id=user_id).first()
+
+    if user is None:
+        messages.error(request, 'User not found.')
+        return redirect('admin_users')
+
+    if user.is_superuser:
+        messages.error(request, 'Superuser accounts cannot be modified here.')
+        return redirect('admin_users')
+
+    user.is_active = not user.is_active
+    user.save(update_fields=['is_active'])
+
+    status = 'activated' if user.is_active else 'deactivated'
+    messages.success(request, f'User {user.username} has been {status}.')
+    log_activity(
+        request,
+        'user_toggle',
+        f'User {user.username} toggled to {status}'
+    )
+    return redirect('admin_users')
 
 @login_required
 @admin_only
 def delete_user_admin(request, user_id):
-    """Delete a user."""
-    if request.method == 'POST':
-        user = User.objects.get(id=user_id)
-        username = user.username
-        user.delete()
-        messages.success(request, f'User {username} has been deleted.')
-        log_activity(request, 'user_delete', f'User {username} deleted')
-    return redirect('admin_users')
+    """Delete an ordinary user. Superusers are protected."""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
 
+    user = User.objects.filter(id=user_id).first()
+
+    if user is None:
+        messages.error(request, 'User not found.')
+        return redirect('admin_users')
+
+    if user.is_superuser:
+        messages.error(request, 'Superuser accounts cannot be deleted here.')
+        return redirect('admin_users')
+
+    username = user.username
+    user.delete()
+
+    messages.success(request, f'User {username} has been deleted.')
+    log_activity(request, 'user_delete', f'User {username} deleted')
+    return redirect('admin_users')
 
 @login_required
 @admin_only
 def clear_logs(request):
-    """Clear all activity logs."""
-    if request.method == 'POST':
-        count = ActivityLog.objects.count()
-        ActivityLog.objects.all().delete()
-        messages.success(request, f'Cleared {count} activity log entries.')
-        log_activity(request, 'logs_clear', f'Cleared all {count} activity logs')
+    """Clear all activity logs. This action is POST-only."""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    count = ActivityLog.objects.count()
+    ActivityLog.objects.all().delete()
+
+    messages.success(request, f'Cleared {count} activity log entries.')
+    log_activity(
+        request,
+        'logs_clear',
+        f'Cleared all {count} activity logs'
+    )
     return redirect('admin_audit')
